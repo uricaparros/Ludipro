@@ -3,7 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Aprèn Jugant! · Minijocs de Primària</title>
+<title>Aprèn Jugant! Minijocs educatius en català per a Primària</title>
+<meta name="description" content="Practica ortografia, fraccions, restes, gramàtica i el rellotge amb 8 minijocs en català per a 4t, 5è i 6è de Primària. Sense registre!">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#6366f1">
+<!-- Quan tinguis domini, descomenta i omple: <link rel="canonical" href="https://EL-TEU-DOMINI/"> -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ca_ES">
+<meta property="og:site_name" content="Aprèn Jugant!">
+<meta property="og:title" content="Aprèn Jugant! Minijocs educatius en català per a Primària">
+<meta property="og:description" content="Practica ortografia, fraccions, restes, gramàtica i el rellotge amb 8 minijocs en català per a 4t, 5è i 6è de Primària. Sense registre!">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Aprèn Jugant! Minijocs educatius en català per a Primària">
+<meta name="twitter:description" content="Practica ortografia, fraccions, restes, gramàtica i el rellotge amb 8 minijocs en català per a 4t, 5è i 6è de Primària. Sense registre!">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%89%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Aprèn Jugant!",
+  "description": "Practica ortografia, fraccions, restes, gramàtica i el rellotge amb 8 minijocs en català per a 4t, 5è i 6è de Primària. Sense registre!",
+  "applicationCategory": "EducationalApplication",
+  "operatingSystem": "Qualsevol dispositiu amb navegador web",
+  "inLanguage": "ca",
+  "educationalLevel": "Primària",
+  "typicalAgeRange": "9-12",
+  "audience": {
+    "@type": "EducationalAudience",
+    "educationalRole": "student"
+  },
+  "teaches": [
+    "Ortografia",
+    "Matemàtiques",
+    "Gramàtica"
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
@@ -55,8 +92,25 @@
 <body class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-slate-800">
 
 <!-- Llenç per al confeti -->
-<canvas id="confetti" class="fixed inset-0 pointer-events-none z-50"></canvas>
-<div id="app"></div>
+<canvas id="confetti" class="fixed inset-0 pointer-events-none z-50" aria-hidden="true"></canvas>
+<main id="app">
+  <!-- Contingut inicial per a cercadors; el JavaScript el substitueix en carregar -->
+  <div class="max-w-3xl mx-auto p-6 text-white">
+    <h1 class="display text-4xl font-extrabold">Aprèn jugant amb minijocs educatius en català</h1>
+    <p class="mt-3 text-lg font-bold">Aprèn Jugant! és una plataforma de minijocs per a l'alumnat de 4t, 5è i 6è de Primària (9-12 anys). Treballa ortografia, matemàtiques i gramàtica en català, sense registre.</p>
+    <h2 class="display text-2xl font-extrabold mt-5">Minijocs inclosos</h2>
+    <ul class="mt-2 list-disc ml-6 font-bold">
+      <li>Ortografia: B o V</li>
+      <li>Ortografia: G o J</li>
+      <li>Restes portant-ne</li>
+      <li>Taules i càlcul mental</li>
+      <li>Fraccions</li>
+      <li>Subjecte i predicat</li>
+      <li>Classes de paraules</li>
+      <li>El rellotge</li>
+    </ul>
+  </div>
+</main>
 <noscript><p class="p-8 text-white font-bold">Cal activar JavaScript per jugar.</p></noscript>
 
 <script>
@@ -299,6 +353,7 @@ function home() {
         <div class="flex gap-3">${[4, 5, 6].map(gradeBtn).join('')}</div>
       </div>
     </div>
+    <h2 class="sr-only">Tria un minijoc</h2>
     <div class="mt-6 grid sm:grid-cols-2 gap-5">${cards}</div>
     ${badgesHTML()}
     <footer class="mt-8 flex justify-center gap-3 flex-wrap">
@@ -331,7 +386,7 @@ function shell() {
   <div class="max-w-4xl mx-auto p-3 sm:p-6">
     <div class="flex items-center justify-between gap-2 mb-3">
       <button onclick="home()" class="bg-white/90 hover:bg-white text-slate-700 font-extrabold rounded-2xl px-4 py-3 shadow">⬅️ Menú</button>
-      <div class="display text-white text-xl sm:text-3xl font-extrabold drop-shadow text-center">${g.emoji} ${g.nom}</div>
+      <h1 class="display text-white text-xl sm:text-3xl font-extrabold drop-shadow text-center">${g.emoji} ${g.nom}</h1>
       <div class="bg-yellow-300 text-yellow-900 font-extrabold rounded-2xl px-4 py-3 shadow">⭐ <span id="pts">0</span></div>
     </div>
     <div class="flex items-center gap-3 mb-3">
@@ -446,7 +501,7 @@ function endRound() {
   <div class="max-w-xl mx-auto p-4 sm:p-8">
     <div class="pop bg-white rounded-3xl shadow-2xl p-8 text-center">
       <div class="text-7xl mb-2">${stars >= 2 ? '🏆' : '🎯'}</div>
-      <h2 class="display text-4xl font-extrabold text-indigo-600">Ronda acabada!</h2>
+      <h1 class="display text-4xl font-extrabold text-indigo-600">Ronda acabada!</h1>
       <div class="text-5xl mt-3">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>
       <p class="mt-3 text-lg font-bold text-slate-600">${msgs[stars]}</p>${extra}
       <div class="grid grid-cols-2 gap-3 mt-5">
@@ -484,7 +539,7 @@ function introTimer(id) {
   <div class="max-w-2xl mx-auto p-4 sm:p-8">
     <div class="pop bg-white rounded-3xl shadow-2xl p-8 text-center">
       <div class="text-7xl">${g.emoji}</div>
-      <h2 class="display text-4xl font-extrabold text-orange-500 mt-2">${g.nom}</h2>
+      <h1 class="display text-4xl font-extrabold text-orange-500 mt-2">${g.nom}</h1>
       <p class="font-bold text-slate-600 mt-2">${g.desc}${vides}</p>
       <div class="grid sm:grid-cols-2 gap-4 mt-6">
         <button onclick="startGame('${id}',{timer:false})" class="bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-xl rounded-2xl px-4 py-5 shadow">😌 Sense cronòmetre</button>
@@ -605,7 +660,7 @@ const fr = (n, d, cls = 'text-2xl') => `<span class="frac ${cls}"><span class="n
 /* Cercle dividit en d parts amb n pintades */
 function pie(n, d, col, size = 'w-32 h-32 sm:w-40 sm:h-40') {
   const r = 52, c = 60;
-  let s = `<svg viewBox="0 0 120 120" class="${size}">`;
+  let s = `<svg viewBox="0 0 120 120" class="${size}" role="img" aria-label="Cercle dividit en parts iguals, amb algunes parts pintades">`;
   for (let i = 0; i < d; i++) {
     const a0 = 2 * Math.PI * i / d - Math.PI / 2, a1 = 2 * Math.PI * (i + 1) / d - Math.PI / 2;
     const x0 = c + r * Math.cos(a0), y0 = c + r * Math.sin(a0), x1 = c + r * Math.cos(a1), y1 = c + r * Math.sin(a1);
@@ -616,7 +671,7 @@ function pie(n, d, col, size = 'w-32 h-32 sm:w-40 sm:h-40') {
 /* Rectangle (barra o quadrícula) dividit en d parts amb n pintades */
 function bar(n, d, col, cls = 'w-56 sm:w-72') {
   const rows = (d >= 6 && d % 2 === 0) ? 2 : 1, cols = d / rows, w = 40;
-  let s = `<svg viewBox="0 0 ${cols * w + 4} ${rows * w + 4}" class="${cls}">`;
+  let s = `<svg viewBox="0 0 ${cols * w + 4} ${rows * w + 4}" class="${cls}" role="img" aria-label="Rectangle dividit en parts iguals, amb algunes parts pintades">`;
   for (let i = 0; i < d; i++) {
     const rr = Math.floor(i / cols), cc = i % cols;
     s += `<rect x="${2 + cc * w}" y="${2 + rr * w}" width="${w}" height="${w}" fill="${i < n ? col : '#fff'}" stroke="#334155" stroke-width="2.5"/>`;
@@ -643,7 +698,7 @@ function genFrac() {
     const nomF = shape === 'pie' ? 'El cercle' : 'El rectangle';
     return {
       sig: `i${n}/${d}${shape}`, cols: 'grid-cols-2', opts: fracOpts([n, d], [[d - n, d], [n, d - n], [n + 1, d], [n - 1, d], [n, d + 1], [n + 1, d + 1], [n, d + 2]]),
-      html: `<h3 class="display text-2xl sm:text-3xl font-extrabold text-center">Quina fracció representa la part pintada?</h3><div class="flex justify-center my-5">${vis}</div>`,
+      html: `<h2 class="display text-2xl sm:text-3xl font-extrabold text-center">Quina fracció representa la part pintada?</h2><div class="flex justify-center my-5">${vis}</div>`,
       expl: `${nomF} està dividit en <b>${d}</b> parts iguals (el denominador) i n'hi ha <b>${n}</b> de pintades (el numerador). Per tant, la fracció és ${fr(n, d, 'text-xl')}.`
     };
   }
@@ -654,7 +709,7 @@ function genFrac() {
     const vis = g < 6 ? `<div class="flex items-center justify-center gap-2 sm:gap-4 my-3 flex-wrap">${pie(a, d, col, 'w-24 h-24 sm:w-32 sm:h-32')}<span class="display text-4xl font-extrabold">+</span>${pie(b, d, col, 'w-24 h-24 sm:w-32 sm:h-32')}</div>` : '';
     return {
       sig: `s${a}/${b}/${d}`, cols: 'grid-cols-2', opts: fracOpts([s, d], [[s, 2 * d], [s + 1, d], [s - 1, d], [s, d + 1], [a * b, d], [s + 1, 2 * d]]),
-      html: `<h3 class="display text-2xl sm:text-3xl font-extrabold text-center">Suma aquestes fraccions</h3>${vis}
+      html: `<h2 class="display text-2xl sm:text-3xl font-extrabold text-center">Suma aquestes fraccions</h2>${vis}
              <div class="flex items-center justify-center gap-3 mt-3 text-4xl">${fr(a, d, 'text-4xl')}<b>+</b>${fr(b, d, 'text-4xl')}<b>=</b><b class="text-indigo-600">?</b></div>`,
       expl: `Si el denominador és el mateix (${d}), només sumem els numeradors: ${a} + ${b} = ${s}. El denominador es queda igual: ${fr(s, d, 'text-xl')}.`
     };
@@ -690,7 +745,7 @@ function genFrac() {
   const vis = g === 4 ? `<div class="flex justify-center items-center gap-4 my-4 flex-wrap">${bar(A[0], A[1], col, 'w-40 sm:w-52')}${bar(B[0], B[1], PAL[(PAL.indexOf(col) + 2) % 6], 'w-40 sm:w-52')}</div>` : '';
   return {
     sig: `c${A}|${B}|${ask}`, cols: g === 6 ? 'grid-cols-3' : 'grid-cols-2', opts,
-    html: `<h3 class="display text-2xl sm:text-3xl font-extrabold text-center">Quina fracció és ${ask === 'major' ? 'més gran' : 'més petita'}?</h3>${vis}`,
+    html: `<h2 class="display text-2xl sm:text-3xl font-extrabold text-center">Quina fracció és ${ask === 'major' ? 'més gran' : 'més petita'}?</h2>${vis}`,
     expl
   };
 }
@@ -741,7 +796,7 @@ function gramShow() {
   if (kind === 'sel') {
     R.cur = { kind, toks, target, nm, sel: new Set(), expl }; R.onEnter = gramCheck;
     stage(`<p class="text-center text-slate-500 font-bold">Toca les paraules que formen el</p>
-      <h3 class="display text-3xl sm:text-4xl text-center font-extrabold text-indigo-600 mb-5">${nm.toUpperCase()}</h3>
+      <h2 class="display text-3xl sm:text-4xl text-center font-extrabold text-indigo-600 mb-5">${nm.toUpperCase()}</h2>
       <div class="flex flex-wrap justify-center gap-2 sm:gap-3">${toks.map((t, i) => `<button id="tk${i}" onclick="tkToggle(${i})" class="tok">${t.w}</button>`).join('')}</div>
       <div class="text-center mt-6"><button onclick="gramCheck()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-2xl rounded-2xl px-8 py-3 shadow">Comprova ✅</button></div>
       <p id="hint" class="text-center text-amber-700 font-bold mt-3"></p>`);
@@ -749,7 +804,7 @@ function gramShow() {
     R.cur = { kind, toks, opts: mcOpts(toks, target), expl }; R.onEnter = null;
     stage(`<p class="text-center text-slate-500 font-bold">Llegeix la frase:</p>
       <div class="display text-2xl sm:text-3xl font-extrabold text-center my-4 leading-snug">${plain(toks)}</div>
-      <h3 class="display text-2xl sm:text-3xl text-center font-extrabold">Quin és el <span class="text-indigo-600">${nm}</span>?</h3>
+      <h2 class="display text-2xl sm:text-3xl text-center font-extrabold">Quin és el <span class="text-indigo-600">${nm}</span>?</h2>
       ${optionsHTML(R.cur.opts, 'grid-cols-1 sm:grid-cols-2', '!text-lg !text-left')}`);
   }
 }
@@ -908,7 +963,7 @@ const horaDig = (h, m) => h + ':' + String(m).padStart(2, '0');
 /* Rellotge analògic en SVG */
 function clockSVG(h, m) {
   const P = (r, deg) => { const a = deg * Math.PI / 180; return [(100 + r * Math.sin(a)).toFixed(1), (100 - r * Math.cos(a)).toFixed(1)]; };
-  let s = '<svg viewBox="0 0 200 200" class="w-52 h-52 sm:w-64 sm:h-64"><circle cx="100" cy="100" r="94" fill="#fff" stroke="#334155" stroke-width="6"/>';
+  let s = '<svg viewBox="0 0 200 200" class="w-52 h-52 sm:w-64 sm:h-64" role="img" aria-label="Rellotge analògic amb la busca curta de les hores i la llarga dels minuts"><circle cx="100" cy="100" r="94" fill="#fff" stroke="#334155" stroke-width="6"/>';
   for (let i = 0; i < 60; i++) {
     const big = i % 5 === 0, a = P(big ? 80 : 86, i * 6), b = P(90, i * 6);
     s += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#334155" stroke-width="${big ? 3 : 1}"/>`;
@@ -991,7 +1046,7 @@ function horaShow() {
     expl: `La busca <b>curta</b> (negra) marca l'hora i la <b>llarga</b> (vermella) els minuts. Aquí són les <b>${horaDig(h, m)}</b>. En català: «${horaCat(h, m)}».`
   };
   R.onEnter = null;
-  stage(`<h3 class="display text-2xl sm:text-3xl font-extrabold text-center">Quina hora marca el rellotge?</h3>
+  stage(`<h2 class="display text-2xl sm:text-3xl font-extrabold text-center">Quina hora marca el rellotge?</h2>
     <div class="flex justify-center my-4">${clockSVG(h, m)}</div>
     ${optionsHTML(R.cur.opts, g === 4 ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2', g === 4 ? 'display text-4xl' : '!text-xl')}`);
 }
@@ -1037,7 +1092,7 @@ const BADGES = [
 function badgesHTML() {
   const got = S.badges || [];
   return `<section class="mt-8 bg-white/95 rounded-3xl p-5 shadow-xl">
-    <div class="display text-2xl font-extrabold text-slate-700 mb-3">🎖️ Les teves insígnies <span class="text-base text-slate-400">${got.length}/${BADGES.length}</span></div>
+    <h2 class="display text-2xl font-extrabold text-slate-700 mb-3">🎖️ Les teves insígnies <span class="text-base text-slate-400">${got.length}/${BADGES.length}</span></h2>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${BADGES.map(b => {
       const on = got.includes(b.id);
       return `<div class="rounded-2xl p-3 text-center border-4 ${on ? 'bg-yellow-50 border-yellow-300' : 'bg-slate-100 border-slate-200 opacity-60'}">
@@ -1069,10 +1124,10 @@ function landing() {
     </button>`).join('');
   const chip = t => `<span class="bg-white/20 backdrop-blur rounded-full px-3 py-1">${t}</span>`;
   const step = (n, e, t, d) => `<div class="text-center p-4"><div class="mx-auto w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-3xl">${e}</div>
-      <div class="display text-xl font-extrabold text-indigo-600 mt-2">${n}. ${t}</div><p class="font-bold text-slate-600 mt-1">${d}</p></div>`;
-  const perk = (e, t, d) => `<div class="flex gap-3"><div class="text-3xl">${e}</div><div><div class="font-extrabold text-slate-800">${t}</div><p class="text-slate-600 font-semibold text-sm">${d}</p></div></div>`;
+      <h3 class="display text-xl font-extrabold text-indigo-600 mt-2">${n}. ${t}</h3><p class="font-bold text-slate-600 mt-1">${d}</p></div>`;
+  const perk = (e, t, d) => `<div class="flex gap-3"><div class="text-3xl">${e}</div><div><h3 class="font-extrabold text-slate-800">${t}</h3><p class="text-slate-600 font-semibold text-sm">${d}</p></div></div>`;
   const faq = (q, a) => `<details class="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200"><summary class="font-extrabold text-slate-800 cursor-pointer">${q}</summary><p class="mt-2 text-slate-600 font-semibold">${a}</p></details>`;
-  const flo = (e, pos, d) => `<div class="float absolute text-4xl sm:text-5xl select-none pointer-events-none ${pos}" style="animation-delay:${d}s">${e}</div>`;
+  const flo = (e, pos, d) => `<div aria-hidden="true" class="float absolute text-4xl sm:text-5xl select-none pointer-events-none ${pos}" style="animation-delay:${d}s">${e}</div>`;
   $('#app').innerHTML = `
   <div class="relative overflow-hidden">
     <nav class="max-w-6xl mx-auto flex items-center justify-between p-4 sm:p-6 text-white">
@@ -1087,8 +1142,8 @@ function landing() {
     <header class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-14 grid md:grid-cols-2 gap-8 items-center text-white">
       <div class="pop">
         <span class="inline-block bg-white/20 rounded-full px-4 py-1 font-extrabold text-sm">Per a 4t, 5è i 6è de Primària · 9-12 anys</span>
-        <h1 class="display text-5xl sm:text-7xl font-extrabold leading-tight mt-4 drop-shadow-lg">Aprendre és el millor <span class="text-yellow-300">joc</span>!</h1>
-        <p class="mt-4 text-xl font-bold opacity-95">Ortografia, mates i gramàtica en català amb minijocs que donen estrelles, insígnies i molt de confeti 🎉</p>
+        <h1 class="display text-5xl sm:text-7xl font-extrabold leading-tight mt-4 drop-shadow-lg">Aprèn jugant amb minijocs <span class="text-yellow-300">en català</span>!</h1>
+        <p class="mt-4 text-xl font-bold opacity-95">Aprendre és el millor joc! Ortografia, mates i gramàtica amb activitats que donen estrelles, insígnies i molt de confeti 🎉</p>
         <div class="mt-6 flex flex-wrap gap-3">
           <button onclick="enterApp()" class="display text-2xl font-extrabold bg-yellow-300 hover:bg-yellow-200 text-yellow-900 rounded-3xl px-8 py-4 shadow-2xl hover:scale-105 transition">▶ Comença a jugar</button>
           <a href="#docents" class="display text-xl font-extrabold border-4 border-white/70 hover:bg-white/20 rounded-3xl px-6 py-4 transition">Soc docent o família</a>
