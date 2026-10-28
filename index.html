@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aprèn Jugant! · Minijocs de Primària</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Nunito',system-ui,sans-serif}
+  .display{font-family:'Baloo 2','Nunito',sans-serif}
+  /* Animacions */
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-7px)}80%{transform:translateX(7px)}}
+  .shake{animation:shake .45s}
+  @keyframes pop{0%{transform:scale(.92);opacity:0}100%{transform:scale(1);opacity:1}}
+  .pop{animation:pop .3s ease-out}
+  /* Botons d'opció (respostes) */
+  .opt{min-height:4.5rem;display:flex;align-items:center;justify-content:center;padding:.8rem 1rem;font-weight:800;font-size:1.35rem;
+       background:#fff;border:4px solid #cbd5e1;border-radius:1.5rem;box-shadow:0 4px 0 #cbd5e1;transition:all .15s;cursor:pointer;color:#1e293b}
+  .opt:hover:not(:disabled){border-color:#818cf8;transform:translateY(-2px)}
+  .opt:active:not(:disabled){transform:scale(.97)}
+  .opt:disabled{cursor:default}
+  .right{background:#dcfce7!important;border-color:#22c55e!important;box-shadow:0 4px 0 #22c55e!important}
+  .bad{background:#fee2e2!important;border-color:#ef4444!important;box-shadow:0 4px 0 #ef4444!important}
+  /* Fraccions */
+  .frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;font-weight:800;vertical-align:middle}
+  .frac .n{border-bottom:3px solid currentColor;padding:0 .35em}
+  .frac .d{padding:0 .35em}
+  /* Resta portant-ne */
+  .digit{display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800;height:3.4rem;font-family:'Baloo 2',sans-serif;color:#1e293b}
+  .cbox{width:2rem;height:2rem;margin:auto;text-align:center;font-weight:800;border:2px dashed #fb923c;border-radius:.5rem;background:#fff7ed;color:#ea580c}
+  .rbox{width:100%;height:4rem;text-align:center;font-size:2.2rem;font-weight:800;border:4px solid #a5b4fc;border-radius:1rem;background:#eef2ff;color:#1e293b}
+  .rbox:focus{border-color:#6366f1;outline:none;background:#fff}
+  .rbox.wrong{border-color:#ef4444;background:#fee2e2}
+  /* Gramàtica: paraules clicables */
+  .tok{padding:.6rem 1rem;font-size:1.35rem;font-weight:800;border-radius:1rem;border:3px solid #cbd5e1;background:#f8fafc;cursor:pointer;transition:all .15s;color:#1e293b}
+  .tok:hover:not(:disabled){border-color:#818cf8}
+  .tok.sel{background:#c7d2fe;border-color:#6366f1;transform:translateY(-3px)}
+  .tok:disabled{cursor:default}
+  .tsub{background:#bae6fd!important;border-color:#0ea5e9!important}
+  .tpre{background:#fde68a!important;border-color:#f59e0b!important}
+  html{scroll-behavior:smooth}
+  @keyframes float{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-14px) rotate(3deg)}}
+  .float{animation:float 4s ease-in-out infinite}
+  @keyframes blink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+  .blink{animation:blink 5s infinite;transform-box:fill-box;transform-origin:center}
+  summary{list-style:none} summary::-webkit-details-marker{display:none}
+  details summary::before{content:'▸ ';color:#6366f1} details[open] summary::before{content:'▾ '}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  .card-game{transition:transform .2s,box-shadow .2s}
+  .card-game:hover{transform:translateY(-6px) rotate(-.5deg);box-shadow:0 20px 30px rgba(0,0,0,.25)}
+  .card-game:active{transform:scale(.97)}
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-slate-800">
+
+<!-- Llenç per al confeti -->
+<canvas id="confetti" class="fixed inset-0 pointer-events-none z-50"></canvas>
+<div id="app"></div>
+<noscript><p class="p-8 text-white font-bold">Cal activar JavaScript per jugar.</p></noscript>
+
+<script>
+"use strict";
+/* =====================================================================
+   APRÈN JUGANT! · Minijocs educatius per a Primària (4t, 5è i 6è)
+   Un sol fitxer: HTML + Tailwind (CDN) + JavaScript vanil·la
+   ===================================================================== */
+
+/* ---------- 1. UTILITATS ---------- */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = arr => arr[rand(0, arr.length - 1)];
+const shuffle = arr => { arr = [...arr]; for (let i = arr.length - 1; i > 0; i--) { const j = rand(0, i); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+const gcd = (a, b) => b ? gcd(b, a % b) : a;
+const lcm = (a, b) => a * b / gcd(a, b);
+
+/* Evita repetir preguntes: recorda les que ja han sortit i només
+   les reinicia quan s'han esgotat. */
+const seen = {};
+function draw(key, pool, n) {
+  seen[key] = seen[key] || new Set();
+  let fresh = pool.filter(q => !seen[key].has(q.id));
+  if (fresh.length < n) { seen[key].clear(); fresh = pool.slice(); }
+  const sel = shuffle(fresh).slice(0, n);
+  sel.forEach(q => seen[key].add(q.id));
+  return sel;
+}
+
+/* ---------- 2. ESTAT GLOBAL (amb desament local) ---------- */
+const STORE = 'apren-jugant-v1';
+let S = { grade: 5, total: 0, sound: true, best: {}, seenIntro: false, rounds: 0, perfect: 0, played: {}, badges: [] };   // dades persistents
+try { Object.assign(S, JSON.parse(localStorage.getItem(STORE) || '{}')); } catch (e) {}
+function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) {} }
+let R = null;   // estat de la partida en curs
+
+const OKT = ['Fantàstic!', 'Molt bé!', 'Perfecte!', 'Genial!', 'Bravo!', 'Increïble!'];
+const KOT = ['Ui, gairebé!', 'Això passa!', 'No passa res!', 'Aprenem-ne!'];
+
+/* ---------- 3. EFECTES: CONFETI I SO ---------- */
+const cv = $('#confetti'), cx = cv.getContext('2d');
+let parts = [], anim = false;
+const COLS = ['#f97316', '#22c55e', '#3b82f6', '#ec4899', '#eab308', '#a855f7'];
+function fit() { cv.width = innerWidth; cv.height = innerHeight; }
+addEventListener('resize', fit); fit();
+function confetti(n = 90) {
+  for (let i = 0; i < n; i++) parts.push({
+    x: innerWidth / 2, y: innerHeight * .4,
+    vx: (Math.random() - .5) * 16, vy: -Math.random() * 14 - 3,
+    s: 6 + Math.random() * 7, c: COLS[rand(0, 5)],
+    r: Math.random() * 6, vr: (Math.random() - .5) * .4, l: 90 + rand(0, 40)
+  });
+  if (!anim) { anim = true; requestAnimationFrame(tick); }
+}
+function tick() {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  parts = parts.filter(p => p.l > 0 && p.y < cv.height + 20);
+  parts.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += .35; p.vx *= .99; p.r += p.vr; p.l--;
+    cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c;
+    cx.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .6); cx.restore();
+  });
+  if (parts.length) requestAnimationFrame(tick); else { anim = false; cx.clearRect(0, 0, cv.width, cv.height); }
+}
+let AC = null;
+function beep(ok) {
+  if (!S.sound) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    (ok ? [523, 659, 784] : [196, 147]).forEach((f, i) => {
+      const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + i * .11;
+      o.type = ok ? 'triangle' : 'sawtooth'; o.frequency.value = f;
+      g.gain.setValueAtTime(.08, t); g.gain.exponentialRampToValueAtTime(.001, t + .18);
+      o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + .2);
+    });
+  } catch (e) {}
+}
+
+/* =====================================================================
+   4. BANCS DE DADES
+   m = curs mínim (4, 5 o 6). Cada curs usa els del seu nivell i l'anterior.
+   ===================================================================== */
+
+/* --- 4.1 Ortografia B / V ("_" marca el buit) --- */
+const BV = [
+  // ---- 4t: paraules molt habituals ----
+  {m:4,t:"_aixell",a:"v",e:"Vaixell s'escriu amb V: el vaixell navega pel mar."},
+  {m:4,t:"El _ent mou les fulles dels arbres.",a:"v",e:"Vent s'escriu amb V."},
+  {m:4,t:"La _aca dóna llet.",a:"v",e:"Vaca s'escriu amb V."},
+  {m:4,t:"El _olígraf escriu en blau.",a:"b",e:"Bolígraf s'escriu amb B."},
+  {m:4,t:"Obre bé la _oca!",a:"b",e:"Boca s'escriu amb B."},
+  {m:4,t:"El ca_all galopa pel prat.",a:"v",e:"Cavall s'escriu amb V."},
+  {m:4,t:"Aquest _ou és molt fort.",a:"b",e:"Bou s'escriu amb B."},
+  {m:4,t:"Em poso el _estit nou.",a:"v",e:"Vestit s'escriu amb V."},
+  {m:4,t:"L'herba és _erda.",a:"v",e:"Verd s'escriu amb V."},
+  {m:4,t:"El cel és _lau.",a:"b",e:"Blau s'escriu amb B."},
+  {m:4,t:"Vull un llapis _ermell.",a:"v",e:"Vermell s'escriu amb V."},
+  {m:4,t:"La capsa està _uida.",a:"b",e:"Buida s'escriu amb B (com buit)."},
+  {m:4,t:"La _arca surt del port.",a:"b",e:"Barca s'escriu amb B."},
+  {m:4,t:"Demà anem de _iatge.",a:"v",e:"Viatge s'escriu amb V."},
+  {m:4,t:"Aquest a_ió vola molt alt.",a:"v",e:"Avió s'escriu amb V."},
+  {m:4,t:"La _ola rodola pel terra.",a:"b",e:"Bola s'escriu amb B."},
+  {m:4,t:"El ca_ell de la nena és llarg.",a:"b",e:"Cabell s'escriu amb B."},
+  {m:4,t:"El soldat és molt _alent.",a:"v",e:"Valent s'escriu amb V."},
+  {m:4,t:"El lli_re és sobre la taula.",a:"b",e:"Llibre s'escriu amb B."},
+  {m:4,t:"La _ombolla de sabó vola.",a:"b",e:"Bombolla s'escriu amb B."},
+  // ---- 5è: regles bàsiques ----
+  {m:5,t:"Tam_é vindràs a la festa?",a:"b",e:"Davant de B va M (mai N): també."},
+  {m:5,t:"Aquest exercici és impossi_le.",a:"b",e:"Les paraules acabades en -ible o -able porten B: impossible."},
+  {m:5,t:"El su_marí navega sota l'aigua.",a:"b",e:"Les paraules amb el prefix sub- porten B: submarí."},
+  {m:5,t:"Vull en_iar una carta a l'avi.",a:"v",e:"Davant de V va N (mai M): enviar."},
+  {m:5,t:"Ens han con_idat a la festa.",a:"v",e:"Davant de V va N: convidat."},
+  {m:5,t:"Hem de com_inar els colors.",a:"b",e:"Davant de B va M: combinar."},
+  {m:5,t:"Ahir jugà_em a futbol al pati.",a:"v",e:"L'imperfet dels verbs acabats en -ar porta V: jugàvem."},
+  {m:5,t:"Vosaltres cantà_eu molt bé.",a:"v",e:"Cantàveu és l'imperfet d'un verb en -ar: porta V."},
+  {m:5,t:"La Laia és molt acti_a.",a:"v",e:"El femení de -iu és -iva: actiu → activa."},
+  {m:5,t:"La bicicleta és no_a.",a:"v",e:"Nou fa nova al femení, amb V."},
+  {m:5,t:"Porto una bufanda bla_a.",a:"v",e:"Blau fa blava al femení, amb V."},
+  {m:5,t:"Guardo el re_ut de la compra.",a:"b",e:"Rebut ve del verb rebre: porta B."},
+  {m:5,t:"Ell ha_ia acabat els deures.",a:"v",e:"Havia ve del verb haver i s'escriu amb V."},
+  {m:5,t:"La Marta sa_ia la resposta.",a:"b",e:"Sabia ve del verb saber: porta B."},
+  {m:5,t:"Jo vi_ia molt a prop de l'escola.",a:"v",e:"Vivia ve del verb viure: porta V."},
+  {m:5,t:"Els pro_lemes de mates són difícils.",a:"b",e:"Problema s'escriu amb B."},
+  {m:5,t:"Va ser un dia terri_le!",a:"b",e:"Acabat en -ible: terrible, amb B."},
+  {m:5,t:"Cal pu_licar la notícia.",a:"b",e:"Publicar s'escriu amb B, com públic."},
+  // ---- 6è: derivats, prefixos, verbs i excepcions ----
+  {m:6,t:"L'o_jecte era sobre la taula.",a:"b",e:"El prefix ob- porta B: objecte."},
+  {m:6,t:"El mestre va su_ratllar la paraula.",a:"b",e:"El prefix sub- porta B: subratllar."},
+  {m:6,t:"Un ad_erbi acompanya el verb.",a:"v",e:"Adverbi porta V (ad- + verbi)."},
+  {m:6,t:"Cal inter_enir ara mateix.",a:"v",e:"Intervenir porta V (inter- + venir)."},
+  {m:6,t:"De petit, jo escri_ia contes.",a:"v",e:"L'imperfet d'escriure és escrivia: porta V."},
+  {m:6,t:"Jo be_ia llet cada matí.",a:"v",e:"L'imperfet de beure és bevia: porta V."},
+  {m:6,t:"Nosaltres de_em fer els deures.",a:"v",e:"Devem ve del verb deure: porta V."},
+  {m:6,t:"El nen està dè_il.",a:"b",e:"Dèbil s'escriu amb B (excepció per memoritzar)."},
+  {m:6,t:"Cada diumenge re_em visites.",a:"b",e:"Rebem ve del verb rebre: porta B."},
+  {m:6,t:"L'am_aixador va parlar amb el president.",a:"b",e:"Davant de B va M: ambaixador."},
+  {m:6,t:"Ha arribat una am_ulància.",a:"b",e:"Davant de B va M: ambulància."},
+  {m:6,t:"La lli_reria obre a les deu.",a:"b",e:"Llibreria deriva de llibre, que porta B."},
+  {m:6,t:"La ne_ada va cobrir els carrers.",a:"v",e:"Nevada deriva de neu i nevar: porta V."}
+];
+
+/* --- 4.2 Gramàtica: [subjecte] {predicat} --- */
+const GR = [
+  // ---- 4t ----
+  {m:4,s:"[Els nens de quart] {van jugar a futbol al pati.}"},
+  {m:4,s:"[La mare] {cuina una pizza molt bona.}"},
+  {m:4,s:"[El gos de l'avi] {borda cada nit.}"},
+  {m:4,s:"[Els ocells del bosc] {canten a la primavera.}"},
+  {m:4,s:"[La Maria] {llegeix un conte a la biblioteca.}"},
+  {m:4,s:"[El meu germà petit] {menja una taronja.}"},
+  {m:4,s:"[Les flors del jardí] {tenen colors preciosos.}"},
+  {m:4,s:"[L'escola] {obre les portes a les nou.}"},
+  {m:4,s:"[Els avis] {passegen pel parc cada tarda.}"},
+  {m:4,s:"[La professora de català] {explica una lliçó nova.}"},
+  {m:4,s:"[El tren] {surt de l'estació.}"},
+  {m:4,s:"[Els peixos de l'estany] {neden molt ràpid.}"},
+  {m:4,s:"[El Pau i la Laia] {pinten un mural.}"},
+  {m:4,s:"[La meva amiga] {viu al costat de casa.}"},
+  {m:4,s:"[L'equip de bàsquet] {guanya el partit.}"},
+  {m:4,s:"[Un núvol gris] {tapa el sol.}"},
+  // ---- 5è: el subjecte pot no ser al principi ----
+  {m:5,s:"[Els alumnes de cinquè i sisè] {visitaran el museu de la ciència demà.}"},
+  {m:5,s:"[La veïna del segon pis] {ens ha regalat unes magdalenes.}"},
+  {m:5,s:"{Aquest cap de setmana} [els meus cosins] {vindran a casa nostra.}"},
+  {m:5,s:"{Ahir a la tarda} [la Marta i el seu germà] {van construir una cabana al bosc.}"},
+  {m:5,s:"[El professor d'educació física] {ha preparat un circuit al gimnàs.}"},
+  {m:5,s:"{Cada matí} [els pescadors del poble] {surten amb les barques.}"},
+  {m:5,s:"[Les muntanyes nevades del Pirineu] {atrauen molts esquiadors a l'hivern.}"},
+  {m:5,s:"{Durant les vacances} [la meva família] {viatjarà fins a Itàlia.}"},
+  {m:5,s:"[El nou company de classe] {ha arribat de Barcelona.}"},
+  {m:5,s:"[Els tres gats negres de la veïna] {dormen sobre el sofà.}"},
+  {m:5,s:"{A la biblioteca} [els estudiants] {preparen els treballs.}"},
+  {m:5,s:"[La pluja] {ha caigut tota la nit.}"},
+  // ---- 6è: complements, subordinades i frases llargues ----
+  {m:6,s:"[El llibre que em van regalar] {és molt interessant.}"},
+  {m:6,s:"{Segons la llegenda,} [el drac de la muntanya] {protegia el poble.}"},
+  {m:6,s:"[Els nens i les nenes que juguen al pati] {fan molt de soroll.}"},
+  {m:6,s:"{Sense fer soroll,} [el gat] {va pujar a l'arbre.}"},
+  {m:6,s:"[Una tempesta d'estiu] {va inundar els carrers del barri.}"},
+  {m:6,s:"{Dissabte passat} [l'Anna] {va guanyar la cursa de relleus.}"},
+  {m:6,s:"[Els músics de l'orquestra] {assagen cada divendres a l'auditori.}"},
+  {m:6,s:"{Al final del curs,} [tots els alumnes de l'escola] {van fer una gran festa.}"}
+];
+BV.forEach((q, i) => q.id = 'bv' + i);
+GR.forEach((q, i) => q.id = 'gr' + i);
+
+/* =====================================================================
+   5. DEFINICIÓ DELS JOCS I MOTOR COMÚ
+   ===================================================================== */
+const GAMES = {
+  bv:    { nom: "Ortografia: B o V", emoji: "✏️", lives: true, letters: ["b","v"], color: "from-orange-400 to-pink-500", n: 10,
+           desc: "Tria B o V i completa la paraula. Tens 3 vides!", prep: () => { R.qs = draw('bv' + R.grade, BV.filter(q => q.m <= R.grade && q.m >= R.grade - 1), R.n); }, show: bvShow },
+  resta: { nom: "Restes portant-ne", emoji: "➖", color: "from-sky-400 to-blue-600", n: 8,
+           desc: "Resta amb 3 i 4 xifres, columna a columna, i apunta les portades.", show: subShow },
+  frac:  { nom: "Fraccions", emoji: "🍕", color: "from-emerald-400 to-teal-600", n: 10,
+           desc: "Reconeix, suma i compara fraccions amb dibuixos.", show: fracShow },
+  gram:  { nom: "Subjecte i predicat", emoji: "📚", color: "from-fuchsia-500 to-purple-700", n: 10,
+           desc: "Troba el subjecte i el predicat de cada frase.", prep: () => { R.qs = draw('gr' + R.grade, GR.filter(q => q.m <= R.grade && q.m >= R.grade - 1), R.n); }, show: gramShow },
+  gj:    { nom: "Ortografia: G o J", emoji: "🦒", color: "from-lime-500 to-green-700", n: 10, lives: true, letters: ["g","j"],
+           desc: "Tria G o J per completar la paraula. Tens 3 vides!", prep: () => { R.qs = draw('gj' + R.grade, GJ.filter(q => q.m <= R.grade && q.m >= R.grade - 1), R.n); }, show: bvShow },
+  mul:   { nom: "Taules i càlcul mental", emoji: "✖️", color: "from-red-400 to-rose-600", n: 10,
+           desc: "Multiplica, divideix i troba el número que falta. Ràpid!", show: mulShow },
+  cls:   { nom: "Classes de paraules", emoji: "🔤", color: "from-cyan-400 to-indigo-600", n: 10,
+           desc: "Nom, verb, adjectiu, article… Quina classe és?", prep: () => { R.qs = draw('cl' + R.grade, CL.filter(q => q.m <= R.grade && q.m >= R.grade - 1), R.n); }, show: clsShow },
+  hora:  { nom: "El rellotge", emoji: "🕒", color: "from-amber-400 to-orange-600", n: 10,
+           desc: "Llegeix l'hora en un rellotge de busques.", show: horaShow }
+};
+
+/* ---------- Pantalla d'inici ---------- */
+function home() {
+  stopTimer(); R = null;
+  const lvl = Math.floor(S.total / 100) + 1, pr = S.total % 100;
+  const gradeBtn = g => `<button onclick="setGrade(${g})" class="flex-1 display text-2xl sm:text-3xl font-extrabold rounded-2xl py-3 shadow transition ${S.grade === g ? 'bg-yellow-300 text-yellow-900 scale-105 ring-4 ring-yellow-500' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${g === 4 ? '4t' : g + 'è'}</button>`;
+  const cards = Object.entries(GAMES).map(([id, g]) => {
+    const rec = S.best[id + '_' + S.grade];
+    return `<button onclick="openGame('${id}')" class="card-game text-left rounded-3xl p-6 shadow-xl text-white bg-gradient-to-br ${g.color}">
+      <div class="text-6xl mb-2">${g.emoji}</div>
+      <div class="display text-3xl font-extrabold leading-tight">${g.nom}</div>
+      <p class="font-bold opacity-95 mt-1">${g.desc}</p>
+      <div class="mt-3 inline-block bg-white/25 rounded-full px-3 py-1 text-sm font-extrabold">${rec ? '🏆 Rècord: ' + rec + ' punts' : '🆕 Encara no hi has jugat'}</div>
+    </button>`;
+  }).join('');
+  $('#app').innerHTML = `
+  <div class="max-w-5xl mx-auto p-4 sm:p-8">
+    <header class="text-center text-white pop">
+      <div class="flex justify-center">${owl('w-20 float')}</div>
+      <h1 class="display text-4xl sm:text-6xl font-extrabold drop-shadow-lg">🎓 Aprèn Jugant!</h1>
+      <p class="mt-2 text-lg sm:text-xl font-bold opacity-95">Minijocs per a Primària: tria un joc i guanya estrelles ⭐</p>
+    </header>
+    <div class="mt-6 grid sm:grid-cols-2 gap-4">
+      <div class="bg-white/95 rounded-3xl p-5 shadow-xl">
+        <div class="font-extrabold text-slate-500">Els teus punts</div>
+        <div class="display text-5xl font-extrabold text-amber-500">⭐ ${S.total}</div>
+        <div class="text-sm font-bold text-slate-500 mt-1">Nivell ${lvl} · et falten ${100 - pr} punts per al següent</div>
+        <div class="h-3 bg-slate-200 rounded-full overflow-hidden mt-2"><div class="h-full bg-amber-400 rounded-full transition-all" style="width:${pr}%"></div></div>
+      </div>
+      <div class="bg-white/95 rounded-3xl p-5 shadow-xl">
+        <div class="font-extrabold text-slate-500 mb-3">Quin curs fas?</div>
+        <div class="flex gap-3">${[4, 5, 6].map(gradeBtn).join('')}</div>
+      </div>
+    </div>
+    <div class="mt-6 grid sm:grid-cols-2 gap-5">${cards}</div>
+    ${badgesHTML()}
+    <footer class="mt-8 flex justify-center gap-3 flex-wrap">
+      <button onclick="landing()" class="bg-white/90 text-slate-700 font-extrabold rounded-2xl px-4 py-2 shadow">🏠 Presentació</button>
+      <button onclick="toggleSound()" class="bg-white/90 text-slate-700 font-extrabold rounded-2xl px-4 py-2 shadow">${S.sound ? '🔊 So activat' : '🔇 So desactivat'}</button>
+      <button onclick="resetAll()" class="bg-white/30 text-white font-extrabold rounded-2xl px-4 py-2 shadow">🗑️ Reinicia els punts</button>
+    </footer>
+  </div>`;
+}
+function setGrade(g) { S.grade = g; save(); home(); }
+function toggleSound() { S.sound = !S.sound; save(); home(); }
+function resetAll() { if (confirm("Segur que vols esborrar tots els punts i rècords?")) { S.total = 0; S.best = {}; S.rounds = 0; S.perfect = 0; S.played = {}; S.badges = []; save(); home(); } }
+
+/* ---------- Inici de partida ---------- */
+function openGame(id) { if (['bv', 'gj', 'mul'].includes(id)) introTimer(id); else startGame(id); }
+
+function startGame(id, opts = {}) {
+  stopTimer();
+  const g = GAMES[id];
+  R = { id, grade: S.grade, i: 0, score: 0, ok: 0, lives: 3, streak: 0, over: false, n: g.n,
+        locked: false, opts, cur: null, qs: [], sigs: new Set(), onEnter: null };
+  if (g.prep) g.prep();
+  shell(); g.show();
+}
+
+/* Estructura comuna de la partida (capçalera, progrés, escenari, feedback) */
+function shell() {
+  const g = GAMES[R.id];
+  $('#app').innerHTML = `
+  <div class="max-w-4xl mx-auto p-3 sm:p-6">
+    <div class="flex items-center justify-between gap-2 mb-3">
+      <button onclick="home()" class="bg-white/90 hover:bg-white text-slate-700 font-extrabold rounded-2xl px-4 py-3 shadow">⬅️ Menú</button>
+      <div class="display text-white text-xl sm:text-3xl font-extrabold drop-shadow text-center">${g.emoji} ${g.nom}</div>
+      <div class="bg-yellow-300 text-yellow-900 font-extrabold rounded-2xl px-4 py-3 shadow">⭐ <span id="pts">0</span></div>
+    </div>
+    <div class="flex items-center gap-3 mb-3">
+      <div class="flex-1 h-4 bg-white/30 rounded-full overflow-hidden"><div id="bar" class="h-full bg-green-400 rounded-full transition-all duration-500" style="width:0%"></div></div>
+      <div id="counter" class="text-white font-extrabold"></div>
+      <div id="lives" class="text-xl"></div>
+    </div>
+    <div id="timerWrap" class="h-3 bg-white/30 rounded-full overflow-hidden mb-3 ${R.opts.timer ? '' : 'hidden'}"><div id="timerBar" class="h-full bg-green-400 rounded-full" style="width:100%"></div></div>
+    <div id="stage" class="bg-white rounded-3xl shadow-xl p-5 sm:p-8"></div>
+    <div id="feedback" class="mt-4"></div>
+  </div>`;
+  hud();
+}
+function hud() {
+  $('#pts').textContent = R.score;
+  $('#bar').style.width = (R.i / R.n * 100) + '%';
+  $('#counter').textContent = Math.min(R.i + 1, R.n) + '/' + R.n;
+  $('#lives').textContent = GAMES[R.id].lives ? '❤️'.repeat(Math.max(R.lives, 0)) + '🖤'.repeat(3 - Math.max(R.lives, 0)) : '';
+}
+function stage(html) {
+  const s = $('#stage'); s.innerHTML = html;
+  s.classList.remove('pop'); void s.offsetWidth; s.classList.add('pop');
+}
+function award(p) { R.score += p; S.total += p; save(); }
+
+/* ---------- Cronòmetre (només Ortografia) ---------- */
+let tId = null;
+function stopTimer() { clearInterval(tId); tId = null; }
+function startTimer() {
+  stopTimer();
+  if (!R.opts.timer) return;
+  R.t = 100;
+  tId = setInterval(() => {
+    R.t--;
+    const b = $('#timerBar');
+    if (b) { b.style.width = R.t + '%'; b.className = 'h-full rounded-full ' + (R.t < 30 ? 'bg-red-400' : 'bg-green-400'); }
+    if (R.t <= 0) { stopTimer(); if (!R.locked) timeUp(); }
+  }, 100);
+}
+function timeUp() { R.locked = true; revealOptions(-1); resolve(false, '⏰ Temps esgotat! ' + R.cur.expl); }
+
+/* ---------- Botons d'opció genèrics ---------- */
+function optionsHTML(opts, cols, cls = '') {
+  return `<div class="grid ${cols} gap-3 sm:gap-4 mt-6">` +
+    opts.map((o, i) => `<button id="opt${i}" onclick="choose(${i})" class="opt ${cls}">${o.h}</button>`).join('') + `</div>`;
+}
+function revealOptions(ch) {
+  R.cur.opts.forEach((o, k) => {
+    const b = $('#opt' + k); if (!b) return;
+    b.disabled = true;
+    if (o.ok) b.classList.add('right'); else if (k === ch) b.classList.add('bad');
+  });
+}
+function choose(i) {
+  if (R.locked) return;
+  R.locked = true;
+  revealOptions(i);
+  resolve(R.cur.opts[i].ok, R.cur.expl);
+}
+
+/* ---------- Resolució d'una pregunta: punts, feedback, confeti ---------- */
+function resolve(ok, expl, pts = 10) {
+  R.locked = true; stopTimer();
+  let title;
+  if (ok) {
+    R.ok++; R.streak++;
+    const bonus = Math.min(R.streak - 1, 3) * 2;      // bonus per ratxa
+    award(pts + bonus); confetti(70); beep(true);
+    title = pick(OKT) + '  +' + (pts + bonus) + ' ⭐' + (R.streak >= 3 ? '  🔥 ratxa de ' + R.streak : '');
+  } else {
+    R.streak = 0;
+    if (GAMES[R.id].lives) { R.lives--; if (R.lives <= 0) R.over = true; }
+    const st = $('#stage'); st.classList.add('shake'); setTimeout(() => st.classList.remove('shake'), 500);
+    beep(false); title = pick(KOT);
+  }
+  if (R.cur && R.cur.after) R.cur.after(ok);
+  hud();
+  const last = R.i >= R.n - 1 || R.over;
+  $('#feedback').innerHTML = `
+    <div class="pop rounded-3xl p-5 shadow-xl ${ok ? 'bg-green-100 border-4 border-green-400' : 'bg-red-100 border-4 border-red-400'}">
+      <div class="display text-2xl font-extrabold ${ok ? 'text-green-700' : 'text-red-700'}">${ok ? '🎉' : '💡'} ${title}</div>
+      <div class="mt-2 text-slate-700 text-lg leading-relaxed">${expl}</div>
+      <button id="nextBtn" onclick="nextQ()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xl rounded-2xl px-6 py-3 shadow">${last ? 'Veure resultats 🏆' : 'Continua ➡️'}</button>
+    </div>`;
+  $('#nextBtn').focus();
+  $('#feedback').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function nextQ() {
+  $('#feedback').innerHTML = '';
+  R.i++;
+  if (R.i >= R.n || R.over) { hud(); return endRound(); }
+  R.locked = false; hud(); GAMES[R.id].show();
+}
+
+/* ---------- Final de ronda ---------- */
+function endRound() {
+  stopTimer();
+  const ratio = R.ok / R.n;
+  const stars = ratio >= .9 ? 3 : ratio >= .6 ? 2 : ratio >= .3 ? 1 : 0;
+  award(stars * 5);                                       // bonus final per estrelles
+  const key = R.id + '_' + R.grade;
+  const record = R.score > (S.best[key] || 0);
+  if (record) S.best[key] = R.score;
+  S.rounds = (S.rounds || 0) + 1; S.played = S.played || {}; S.played[R.id] = true;
+  if (stars === 3) S.perfect = (S.perfect || 0) + 1;
+  const newB = checkBadges();
+  save();
+  const msgs = ["No t'ho prenguis malament! Cada error t'ensenya alguna cosa.", "Bon intent! Practicant, cada cop et sortirà millor.", "Molt bé! Gairebé ho tens tot.", "Increïble! Has fet una ronda excel·lent!"];
+  const extra = R.over ? '<p class="font-bold text-red-600 mt-2">T\'has quedat sense vides, però pots tornar-ho a provar!</p>' : '';
+  const id = R.id;
+  $('#app').innerHTML = `
+  <div class="max-w-xl mx-auto p-4 sm:p-8">
+    <div class="pop bg-white rounded-3xl shadow-2xl p-8 text-center">
+      <div class="text-7xl mb-2">${stars >= 2 ? '🏆' : '🎯'}</div>
+      <h2 class="display text-4xl font-extrabold text-indigo-600">Ronda acabada!</h2>
+      <div class="text-5xl mt-3">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>
+      <p class="mt-3 text-lg font-bold text-slate-600">${msgs[stars]}</p>${extra}
+      <div class="grid grid-cols-2 gap-3 mt-5">
+        <div class="bg-green-100 rounded-2xl p-3"><div class="display text-3xl font-extrabold text-green-700">${R.ok}/${R.n}</div><div class="font-bold text-green-800">encerts</div></div>
+        <div class="bg-yellow-100 rounded-2xl p-3"><div class="display text-3xl font-extrabold text-yellow-700">+${R.score}</div><div class="font-bold text-yellow-800">punts</div></div>
+      </div>
+      ${record ? '<p class="mt-3 font-extrabold text-pink-600">🎉 Nou rècord personal!</p>' : ''}
+      ${newB.map(b => `<p class="mt-3 font-extrabold text-amber-600 bg-amber-50 border-2 border-amber-300 rounded-2xl p-2">${b.e} Nova insígnia: ${b.n}!</p>`).join('')}
+      <div class="flex gap-3 mt-6 justify-center flex-wrap">
+        <button onclick="openGame('${id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xl rounded-2xl px-6 py-3 shadow">🔁 Torna a jugar</button>
+        <button onclick="home()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold text-xl rounded-2xl px-6 py-3 shadow">🏠 Menú</button>
+      </div>
+    </div>
+  </div>`;
+  if (stars >= 2 || newB.length) { confetti(220); setTimeout(() => confetti(160), 500); }
+  R = null;
+}
+
+/* Tecla Enter: continua o comprova (si el botó ja té el focus, el navegador ja el prem) */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const nb = $('#nextBtn');
+  if (nb) { if (document.activeElement !== nb) nb.click(); return; }
+  if (R && R.onEnter && !R.locked) R.onEnter();
+});
+
+/* =====================================================================
+   6. MINIJOC 1 · ORTOGRAFIA B / V
+   ===================================================================== */
+function introTimer(id) {
+  stopTimer(); R = null;
+  const g = GAMES[id];
+  const vides = g.lives ? `<br>Tens <span class="text-xl">❤️❤️❤️</span> 3 vides: cada error en treu una!` : '';
+  $('#app').innerHTML = `
+  <div class="max-w-2xl mx-auto p-4 sm:p-8">
+    <div class="pop bg-white rounded-3xl shadow-2xl p-8 text-center">
+      <div class="text-7xl">${g.emoji}</div>
+      <h2 class="display text-4xl font-extrabold text-orange-500 mt-2">${g.nom}</h2>
+      <p class="font-bold text-slate-600 mt-2">${g.desc}${vides}</p>
+      <div class="grid sm:grid-cols-2 gap-4 mt-6">
+        <button onclick="startGame('${id}',{timer:false})" class="bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-xl rounded-2xl px-4 py-5 shadow">😌 Sense cronòmetre</button>
+        <button onclick="startGame('${id}',{timer:true})" class="bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xl rounded-2xl px-4 py-5 shadow">⏱️ Amb cronòmetre<br><span class="text-sm font-bold">(10 segons per pregunta)</span></button>
+      </div>
+      <button onclick="home()" class="mt-5 text-slate-500 font-extrabold underline">⬅️ Torna al menú</button>
+    </div>
+  </div>`;
+}
+/* Joc de triar entre dues lletres (B/V i G/J) */
+function bvShow() {
+  const q = R.qs[R.i], L = GAMES[R.id].letters;
+  const shown = q.t.replace('_', '<span id="blank" class="inline-block min-w-[1.6em] text-center rounded-lg bg-yellow-200 text-orange-600 px-2 border-b-4 border-orange-400">?</span>');
+  const full = q.t.replace('_', `<u class="text-orange-600">${q.a}</u>`);
+  R.cur = {
+    opts: L.map(x => ({ h: x.toUpperCase(), ok: q.a === x })),
+    expl: `<b>${full}</b><br>${q.e}`,
+    after: ok => { const b = $('#blank'); if (b) { b.textContent = q.a.toUpperCase(); b.classList.add(ok ? 'right' : 'bad'); } }
+  };
+  R.onEnter = null;
+  stage(`<p class="text-slate-500 font-bold text-center">Quina lletra falta?</p>
+    <div class="display text-3xl sm:text-5xl font-extrabold text-slate-800 text-center my-8 leading-snug">${shown}</div>
+    ${optionsHTML(R.cur.opts, 'grid-cols-2', 'display text-6xl !py-6')}`);
+  startTimer();
+}
+
+/* =====================================================================
+   7. MINIJOC 2 · RESTES PORTANT-NE
+   ===================================================================== */
+function borrows(a, b) {               // quantes vegades cal "portar-ne"
+  const A = String(a).split('').reverse(), B = String(b).padStart(A.length, '0').split('').reverse();
+  let c = 0, n = 0;
+  for (let i = 0; i < A.length; i++) { const y = +B[i] + c; if (+A[i] < y) { n++; c = 1; } else c = 0; }
+  return n;
+}
+function genSub(g) {
+  const d = g === 4 ? 3 : (g === 5 ? pick([3, 4, 4]) : 4);   // xifres
+  const need = g === 4 ? 1 : 2;                                // mínim de portades
+  let a, b, t = 0;
+  do {
+    a = rand(2 * 10 ** (d - 1), 10 ** d - 1);
+    b = rand(10 ** (d - 1), a - 1);
+    t++;
+  } while (t < 3000 && (borrows(a, b) < need || (g === 6 && t < 1500 && !String(a).slice(1).includes('0'))));
+  return { a, b, d };
+}
+function subShow() {
+  const { a, b, d } = genSub(R.grade);
+  R.cur = { a, b, d, tries: 0 };
+  const heads = ['UM', 'C', 'D', 'U'].slice(4 - d);
+  const A = String(a).split(''), B = String(b).split('');
+  const grid = `display:grid;grid-template-columns:2.5rem repeat(${d},4.2rem);gap:.4rem;justify-content:center;align-items:center`;
+  let h = `<div class="text-center text-slate-600 font-bold mb-4">Calcula <b class="text-indigo-600 text-xl">${a} − ${b}</b>.<br>Si te'n portes una, apunta-ho a les caselles petites 🟠 i escriu el resultat a baix.</div>
+  <div style="${grid}" class="mx-auto w-fit">
+    <div></div>${heads.map(x => `<div class="text-center text-xs font-extrabold text-slate-400">${x}</div>`).join('')}
+    <div class="text-[10px] text-orange-400 font-bold leading-tight text-center">porto</div>
+    ${A.map((_, i) => i < d - 1 ? `<input id="c${i}" maxlength="1" inputmode="numeric" oninput="numOnly(this)" class="cbox">` : '<div></div>').join('')}
+    <div></div>${A.map(x => `<div class="digit">${x}</div>`).join('')}
+    <div class="digit !text-slate-400">−</div>${B.map(x => `<div class="digit !text-rose-600">${x}</div>`).join('')}
+    <div style="grid-column:1/-1" class="border-t-4 border-slate-700 my-1"></div>
+    <div class="digit !text-slate-400">=</div>${A.map((_, i) => `<input id="res${i}" maxlength="1" inputmode="numeric" oninput="resInput(this,${i})" onkeydown="resKey(event,${i})" class="rbox">`).join('')}
+  </div>
+  <div class="text-center mt-6"><button id="chkBtn" onclick="subCheck()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-2xl rounded-2xl px-8 py-3 shadow">Comprova ✅</button></div>
+  <div id="hint" class="mt-3 text-center font-bold text-amber-700"></div>`;
+  stage(h);
+  R.onEnter = subCheck;
+  setTimeout(() => { const f = $('#res' + (d - 1)); if (f) f.focus(); }, 60);
+}
+function numOnly(el) { el.value = el.value.replace(/\D/g, '').slice(0, 1); }
+function resInput(el, i) { numOnly(el); if (el.value && i > 0) $('#res' + (i - 1)).focus(); }   // salta a la columna de l'esquerra
+function resKey(e, i) { if (e.key === 'Backspace' && !e.target.value && i < R.cur.d - 1) $('#res' + (i + 1)).focus(); }
+
+function subCheck() {
+  if (R.locked) return;
+  const c = R.cur, hint = $('#hint');
+  const vals = [...Array(c.d).keys()].map(i => $('#res' + i).value);
+  const joined = vals.map(v => v || ' ').join('').trimStart();
+  if (!joined.trim()) { hint.textContent = 'Escriu primer el resultat a les caselles de baix 😉'; return; }
+  if (joined.includes(' ')) { hint.textContent = 'Omple totes les caselles, des de la primera xifra fins a les unitats.'; return; }
+  const exp = c.a - c.b;
+  if (parseInt(joined, 10) === exp) {
+    $$('.rbox,.cbox').forEach(x => { x.disabled = true; x.classList.remove('wrong'); });
+    return resolve(true, `${c.a} − ${c.b} = <b>${exp}</b>. ${c.tries ? 'Ho has aconseguit al segon intent, molt bé!' : 'Perfecte, a la primera!'}`, c.tries ? 8 : 15);
+  }
+  c.tries++;
+  const ex = String(exp).padStart(c.d, '0');
+  vals.forEach((v, i) => $('#res' + i).classList.toggle('wrong', (v || '0') !== ex[i]));
+  if (c.tries < 2) {                                         // primer error: un segon intent
+    const st = $('#stage'); st.classList.add('shake'); setTimeout(() => st.classList.remove('shake'), 500);
+    beep(false);
+    hint.innerHTML = '🔎 Gairebé! Les caselles en vermell no són correctes. Repassa-ho columna per columna i torna-ho a provar.<br><span class="text-sm">Pista: si la xifra de dalt és més petita que la de baix, te\'n portes una!</span>';
+    return;
+  }
+  $$('.rbox,.cbox').forEach(x => x.disabled = true);
+  resolve(false, `El resultat correcte és <b>${exp}</b>. Mira com es fa pas a pas:
+    <ol class="list-decimal ml-6 mt-2 space-y-1">${subSteps(c.a, c.b)}</ol>
+    <p class="mt-2 text-base">💡 Quan te'n portes una, la suma a la xifra de baix de la columna següent.</p>`);
+}
+function subSteps(a, b) {
+  const A = String(a).split('').reverse().map(Number);
+  const B = String(b).padStart(A.length, '0').split('').reverse().map(Number);
+  const nm = ['unitats', 'desenes', 'centenes', 'unitats de miler'];
+  let c = 0; const out = [];
+  A.forEach((x, i) => {
+    const y = B[i] + c, tail = c ? ` (${B[i]} + 1 que ens havíem portat)` : '';
+    if (x < y) { out.push(`<li><b>${nm[i]}:</b> ${x} és més petit que ${y}${tail}, així que <b>ens en portem una</b>: ${x + 10} − ${y} = <b>${x + 10 - y}</b>.</li>`); c = 1; }
+    else { out.push(`<li><b>${nm[i]}:</b> ${x} − ${y}${tail} = <b>${x - y}</b>.</li>`); c = 0; }
+  });
+  return out.join('');
+}
+
+/* =====================================================================
+   8. MINIJOC 3 · FRACCIONS
+   ===================================================================== */
+const PAL = ['#f97316', '#22c55e', '#3b82f6', '#ec4899', '#a855f7', '#eab308'];
+const fr = (n, d, cls = 'text-2xl') => `<span class="frac ${cls}"><span class="n">${n}</span><span class="d">${d}</span></span>`;
+
+/* Cercle dividit en d parts amb n pintades */
+function pie(n, d, col, size = 'w-32 h-32 sm:w-40 sm:h-40') {
+  const r = 52, c = 60;
+  let s = `<svg viewBox="0 0 120 120" class="${size}">`;
+  for (let i = 0; i < d; i++) {
+    const a0 = 2 * Math.PI * i / d - Math.PI / 2, a1 = 2 * Math.PI * (i + 1) / d - Math.PI / 2;
+    const x0 = c + r * Math.cos(a0), y0 = c + r * Math.sin(a0), x1 = c + r * Math.cos(a1), y1 = c + r * Math.sin(a1);
+    s += `<path d="M${c} ${c} L${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z" fill="${i < n ? col : '#fff'}" stroke="#334155" stroke-width="2.5" stroke-linejoin="round"/>`;
+  }
+  return s + '</svg>';
+}
+/* Rectangle (barra o quadrícula) dividit en d parts amb n pintades */
+function bar(n, d, col, cls = 'w-56 sm:w-72') {
+  const rows = (d >= 6 && d % 2 === 0) ? 2 : 1, cols = d / rows, w = 40;
+  let s = `<svg viewBox="0 0 ${cols * w + 4} ${rows * w + 4}" class="${cls}">`;
+  for (let i = 0; i < d; i++) {
+    const rr = Math.floor(i / cols), cc = i % cols;
+    s += `<rect x="${2 + cc * w}" y="${2 + rr * w}" width="${w}" height="${w}" fill="${i < n ? col : '#fff'}" stroke="#334155" stroke-width="2.5"/>`;
+  }
+  return s + '</svg>';
+}
+/* Construeix 4 opcions de fracció: la correcta + 3 distractors vàlids */
+function fracOpts(corr, cands) {
+  const key = x => x[0] + '/' + x[1], used = new Set([key(corr)]), ds = [];
+  shuffle(cands).forEach(x => { if (x[0] >= 1 && x[1] >= 2 && !used.has(key(x)) && ds.length < 3) { used.add(key(x)); ds.push(x); } });
+  return shuffle([{ h: fr(corr[0], corr[1], 'text-4xl'), ok: true }, ...ds.map(x => ({ h: fr(x[0], x[1], 'text-4xl'), ok: false }))]);
+}
+
+function genFrac() {
+  const g = R.grade;
+  const type = pick(g === 4 ? ['id', 'id', 'sum', 'cmp'] : ['id', 'sum', 'cmp']);
+  const dens = g === 4 ? [2, 3, 4, 5, 6, 8] : g === 5 ? [2, 3, 4, 5, 6, 8, 10] : [3, 4, 5, 6, 8, 9, 10, 12];
+  const col = pick(PAL);
+
+  /* a) Quina fracció representa el dibuix? */
+  if (type === 'id') {
+    const d = pick(dens), n = rand(1, d - 1), shape = pick(['pie', 'bar']);
+    const vis = shape === 'pie' ? pie(n, d, col) : bar(n, d, col);
+    const nomF = shape === 'pie' ? 'El cercle' : 'El rectangle';
+    return {
+      sig: `i${n}/${d}${shape}`, cols: 'grid-cols-2', opts: fracOpts([n, d], [[d - n, d], [n, d - n], [n + 1, d], [n - 1, d], [n, d + 1], [n + 1, d + 1], [n, d + 2]]),
+      html: `<h3 class="display text-2xl sm:text-3xl font-extrabold text-center">Quina fracció representa la part pintada?</h3><div class="flex justify-center my-5">${vis}</div>`,
+      expl: `${nomF} està dividit en <b>${d}</b> parts iguals (el denominador) i n'hi ha <b>${n}</b> de pintades (el numerador). Per tant, la fracció és ${fr(n, d, 'text-xl')}.`
+    };
+  }
+  /* b) Suma de fraccions amb el mateix denominador */
+  if (type === 'sum') {
+    const d = pick(dens.filter(x => x >= 3));
+    const a = rand(1, d - 1), b = g === 6 ? rand(1, d - 1) : rand(1, d - a), s = a + b;
+    const vis = g < 6 ? `<div class="flex items-center justify-center gap-2 sm:gap-4 my-3 flex-wrap">${pie(a, d, col, 'w-24 h-24 sm:w-32 sm:h-32')}<span class="display text-4xl font-extrabold">+</span>${pie(b, d, col, 'w-24 h-24 sm:w-32 sm:h-32')}</div>` : '';
+    return {
+      sig: `s${a}/${b}/${d}`, cols: 'grid-cols-2', opts: fracOpts([s, d], [[s, 2 * d], [s + 1, d], [s - 1, d], [s, d + 1], [a * b, d], [s + 1, 2 * d]]),
+      html: `<h3 class="display text-2xl sm:text-3xl font-extrabold text-center">Suma aquestes fraccions</h3>${vis}
+             <div class="flex items-center justify-center gap-3 mt-3 text-4xl">${fr(a, d, 'text-4xl')}<b>+</b>${fr(b, d, 'text-4xl')}<b>=</b><b class="text-indigo-600">?</b></div>`,
+      expl: `Si el denominador és el mateix (${d}), només sumem els numeradors: ${a} + ${b} = ${s}. El denominador es queda igual: ${fr(s, d, 'text-xl')}.`
+    };
+  }
+  /* c) Comparació de fraccions */
+  const mode = g === 4 ? 'same' : g === 5 ? pick(['same', 'samen']) : pick(['same', 'samen', 'unlike', 'unlike', 'eq']);
+  let A, B, expl;
+  if (mode === 'same') {
+    const d = rand(4, 10); let n1 = rand(1, d - 1), n2 = rand(1, d - 1); while (n2 === n1) n2 = rand(1, d - 1);
+    A = [n1, d]; B = [n2, d];
+    expl = `Tenen el mateix denominador (${d}), així que és més gran la que té el numerador més gran: ${fr(Math.max(n1, n2), d, 'text-xl')} és major que ${fr(Math.min(n1, n2), d, 'text-xl')}.`;
+  } else if (mode === 'samen') {
+    const n = rand(1, 4); let d1 = rand(n + 1, 10), d2 = rand(n + 1, 10); while (d2 === d1) d2 = rand(n + 1, 10);
+    A = [n, d1]; B = [n, d2];
+    expl = `Tenen el mateix numerador (${n}). Com més gran és el denominador, més trossos fem i més petit és cada tros. Per tant, ${fr(n, Math.min(d1, d2), 'text-xl')} és major que ${fr(n, Math.max(d1, d2), 'text-xl')}.`;
+  } else if (mode === 'eq') {
+    const d = pick([2, 3, 4, 5]), n = rand(1, d - 1), k = rand(2, 4);
+    A = [n, d]; B = [n * k, d * k];
+    if (Math.random() < .5) [A, B] = [B, A];
+    expl = `Si multipliquem numerador i denominador de ${fr(n, d, 'text-xl')} per ${k}, obtenim ${fr(n * k, d * k, 'text-xl')}. Són fraccions equivalents: representen la mateixa quantitat!`;
+  } else {
+    const ds = [2, 3, 4, 5, 6, 8, 10]; let d1, d2, n1, n2;
+    do { d1 = pick(ds); d2 = pick(ds); n1 = rand(1, d1 - 1); n2 = rand(1, d2 - 1); } while (d1 === d2 || n1 * d2 === n2 * d1);
+    A = [n1, d1]; B = [n2, d2];
+    const L = lcm(d1, d2), x = n1 * L / d1, y = n2 * L / d2;
+    expl = `Les passem al mateix denominador (${L}): ${fr(x, L, 'text-xl')} i ${fr(y, L, 'text-xl')}. Ara comparem els numeradors: ${x} ${x > y ? '>' : '<'} ${y}.`;
+  }
+  const ask = mode === 'eq' ? 'major' : pick(['major', 'menor']);
+  const cmp = A[0] * B[1] - B[0] * A[1];
+  const ans = cmp === 0 ? 2 : (ask === 'major' ? (cmp > 0 ? 0 : 1) : (cmp > 0 ? 1 : 0));
+  const opts = [{ h: fr(A[0], A[1], 'text-4xl'), ok: ans === 0 }, { h: fr(B[0], B[1], 'text-4xl'), ok: ans === 1 }];
+  if (g === 6) opts.push({ h: '<span class="text-xl">Són iguals</span>', ok: ans === 2 });
+  const vis = g === 4 ? `<div class="flex justify-center items-center gap-4 my-4 flex-wrap">${bar(A[0], A[1], col, 'w-40 sm:w-52')}${bar(B[0], B[1], PAL[(PAL.indexOf(col) + 2) % 6], 'w-40 sm:w-52')}</div>` : '';
+  return {
+    sig: `c${A}|${B}|${ask}`, cols: g === 6 ? 'grid-cols-3' : 'grid-cols-2', opts,
+    html: `<h3 class="display text-2xl sm:text-3xl font-extrabold text-center">Quina fracció és ${ask === 'major' ? 'més gran' : 'més petita'}?</h3>${vis}`,
+    expl
+  };
+}
+function fracShow() {
+  let q, t = 0;
+  do { q = genFrac(); t++; } while (R.sigs.has(q.sig) && t < 40);   // evita repetir
+  R.sigs.add(q.sig); R.cur = q; R.onEnter = null;
+  stage(q.html + optionsHTML(q.opts, q.cols));
+}
+
+/* =====================================================================
+   9. MINIJOC 4 · SUBJECTE I PREDICAT
+   Les frases es marquen amb [subjecte] i {predicat}
+   ===================================================================== */
+function parseS(str) {
+  const toks = [], re = /\[([^\]]+)\]|\{([^}]+)\}/g; let m;
+  while ((m = re.exec(str))) {
+    const t = m[1] ? 's' : 'p';
+    (m[1] || m[2]).trim().split(/\s+/).forEach(w => toks.push({ w, t }));
+  }
+  return toks;
+}
+const plain = toks => toks.map(t => t.w).join(' ');
+function colored(toks) {
+  return `<div class="display text-xl sm:text-2xl leading-loose">${toks.map(t => `<span class="px-2 py-1 rounded-lg ${t.t === 's' ? 'bg-sky-200 text-sky-900' : 'bg-amber-200 text-amber-900'}">${t.w}</span>`).join(' ')}</div>
+    <div class="text-sm font-bold mt-1"><span class="px-2 py-0.5 rounded bg-sky-200 text-sky-900">Subjecte</span> <span class="px-2 py-0.5 rounded bg-amber-200 text-amber-900">Predicat</span></div>`;
+}
+function mcOpts(toks, target) {
+  const S_ = toks.filter(t => t.t === 's').map(t => t.w), P_ = toks.filter(t => t.t === 'p').map(t => t.w);
+  const corr = target === 's' ? S_ : P_, other = target === 's' ? P_ : S_;
+  const clean = a => a.join(' ').replace(/[.,;]+$/, '');
+  const right = clean(corr);
+  let cands = [clean(other)];
+  if (corr.length > 1) cands.push(clean(corr.slice(0, -1)), clean(corr.slice(1)));
+  cands.push(clean(corr.concat(other.slice(0, 1))), clean(other.slice(0, Math.ceil(other.length / 2))), clean(other.slice(-2)));
+  cands = [...new Set(cands)].filter(x => x && x !== right);
+  const ds = [cands[0], ...shuffle(cands.slice(1))].slice(0, 3);   // sempre inclou la part contrària
+  return shuffle([{ h: right, ok: true }, ...ds.map(x => ({ h: x, ok: false }))]);
+}
+function gramShow() {
+  const it = R.qs[R.i], toks = parseS(it.s);
+  const target = pick(['s', 'p']), nm = target === 's' ? 'subjecte' : 'predicat';
+  const kind = Math.random() < (R.grade === 4 ? .6 : .5) ? 'sel' : 'mc';
+  const hint = target === 's'
+    ? `💡 <b>Subjecte:</b> és la part de la frase que ens diu <i>de qui o de què</i> parlem. Prova de preguntar «Qui…?» o «Què…?» davant del verb.`
+    : `💡 <b>Predicat:</b> és tot el que s'explica del subjecte (què fa, què li passa o com és). Sempre porta el verb!`;
+  const expl = `<div class="my-2">${colored(toks)}</div>${hint}`;
+  if (kind === 'sel') {
+    R.cur = { kind, toks, target, nm, sel: new Set(), expl }; R.onEnter = gramCheck;
+    stage(`<p class="text-center text-slate-500 font-bold">Toca les paraules que formen el</p>
+      <h3 class="display text-3xl sm:text-4xl text-center font-extrabold text-indigo-600 mb-5">${nm.toUpperCase()}</h3>
+      <div class="flex flex-wrap justify-center gap-2 sm:gap-3">${toks.map((t, i) => `<button id="tk${i}" onclick="tkToggle(${i})" class="tok">${t.w}</button>`).join('')}</div>
+      <div class="text-center mt-6"><button onclick="gramCheck()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-2xl rounded-2xl px-8 py-3 shadow">Comprova ✅</button></div>
+      <p id="hint" class="text-center text-amber-700 font-bold mt-3"></p>`);
+  } else {
+    R.cur = { kind, toks, opts: mcOpts(toks, target), expl }; R.onEnter = null;
+    stage(`<p class="text-center text-slate-500 font-bold">Llegeix la frase:</p>
+      <div class="display text-2xl sm:text-3xl font-extrabold text-center my-4 leading-snug">${plain(toks)}</div>
+      <h3 class="display text-2xl sm:text-3xl text-center font-extrabold">Quin és el <span class="text-indigo-600">${nm}</span>?</h3>
+      ${optionsHTML(R.cur.opts, 'grid-cols-1 sm:grid-cols-2', '!text-lg !text-left')}`);
+  }
+}
+function tkToggle(i) {
+  if (R.locked) return;
+  const s = R.cur.sel;
+  if (s.has(i)) s.delete(i); else s.add(i);
+  $('#tk' + i).classList.toggle('sel');
+}
+function gramCheck() {
+  if (R.locked) return;
+  const c = R.cur;
+  if (!c.sel.size) { $('#hint').textContent = 'Toca primer alguna paraula de la frase 👆'; return; }
+  const want = c.toks.map((t, i) => t.t === c.target ? i : -1).filter(i => i >= 0);
+  const ok = want.length === c.sel.size && want.every(i => c.sel.has(i));
+  c.toks.forEach((t, i) => { const b = $('#tk' + i); b.disabled = true; b.classList.remove('sel'); b.classList.add(t.t === 's' ? 'tsub' : 'tpre'); });
+  resolve(ok, (ok ? `Has trobat el ${c.nm}! ` : `Aquest era el ${c.nm} correcte (mira els colors). `) + c.expl);
+}
+
+/* =====================================================================
+   10. NOUS MINIJOCS
+   ===================================================================== */
+
+/* --- 10.1 Ortografia G / J ("_" marca el buit) --- */
+const GJ = [
+  // ---- 4t ----
+  {m:4,t:"La _irafa té el coll molt llarg.",a:"g",e:"Girafa s'escriu amb G (davant de i sona com «j»)."},
+  {m:4,t:"Anem a regar el _ardí.",a:"j",e:"Jardí s'escriu amb J."},
+  {m:4,t:"M'agrada el _elat de xocolata.",a:"g",e:"Gelat s'escriu amb G, davant de e."},
+  {m:4,t:"Vull _ugar amb tu al pati.",a:"j",e:"Jugar s'escriu amb J, davant de u."},
+  {m:4,t:"Ens agrada el _oc de la baldufa.",a:"j",e:"Joc s'escriu amb J, davant de o."},
+  {m:4,t:"El meu _ermà és molt alt.",a:"g",e:"Germà s'escriu amb G."},
+  {m:4,t:"M'he menjat una taron_a.",a:"j",e:"Taronja s'escriu amb J, davant de a."},
+  {m:4,t:"Porto un _ersei de llana.",a:"j",e:"Jersei s'escriu amb J (es pronuncia «jersèi»)."},
+  {m:4,t:"A la plaça hi havia molta _ent.",a:"g",e:"Gent s'escriu amb G, davant de e."},
+  {m:4,t:"El _erro de la taula és de vidre.",a:"g",e:"Gerro s'escriu amb G, davant de e."},
+  {m:4,t:"La _oia és dins d'una capsa.",a:"j",e:"Joia s'escriu amb J."},
+  {m:4,t:"El _ou del bou és pesat.",a:"j",e:"Jou s'escriu amb J."},
+  {m:4,t:"Em fa mal el _enoll.",a:"g",e:"Genoll s'escriu amb G."},
+  {m:4,t:"L'avi ens va explicar un _oc de paraules.",a:"j",e:"Joc, amb J."},
+  {m:4,t:"La nena _ira sobre si mateixa.",a:"g",e:"Gira, del verb girar, s'escriu amb G."},
+  {m:4,t:"El _udoka va guanyar el combat.",a:"j",e:"Judoka s'escriu amb J, davant de u."},
+  // ---- 5è ----
+  {m:5,t:"Hem fet un bon viat_e.",a:"g",e:"Les paraules acabades en -atge porten G: viatge."},
+  {m:5,t:"M'agrada el forma_e amb mel.",a:"g",e:"Formatge porta G (acabat en -atge)."},
+  {m:5,t:"Hem rebut un missa_e al mòbil.",a:"g",e:"Missatge porta G (acabat en -atge)."},
+  {m:5,t:"Quin bonic paisa_e!",a:"g",e:"Paisatge porta G (acabat en -atge)."},
+  {m:5,t:"El _utge va dictar sentència.",a:"j",e:"Jutge s'escriu amb J, com judici i justícia."},
+  {m:5,t:"Cal fer _usticia.",a:"j",e:"Justícia porta J, com just."},
+  {m:5,t:"La _oventut és una etapa de la vida.",a:"j",e:"Joventut porta J, com jove."},
+  {m:5,t:"El meu pare és _ove encara.",a:"j",e:"Jove s'escriu amb J."},
+  {m:5,t:"Estudiem _eografia aquest trimestre.",a:"g",e:"Geografia porta G, com geologia i geometria."},
+  {m:5,t:"La classe de _eometria és divertida.",a:"g",e:"Geometria s'escriu amb G."},
+  {m:5,t:"Els nens _ugadors van sortir al camp.",a:"j",e:"Jugadors deriva de jugar: porta J."},
+  {m:5,t:"El _eneral va donar l'ordre.",a:"g",e:"General s'escriu amb G, davant de e."},
+  {m:5,t:"El _ardiner rega les flors.",a:"j",e:"Jardiner deriva de jardí: porta J."},
+  {m:5,t:"Els _ocs de taula són molt divertits.",a:"j",e:"Jocs, plural de joc, porta J."},
+  {m:5,t:"La _eneració dels meus avis va viure la guerra.",a:"g",e:"Generació s'escriu amb G, com general."},
+  {m:5,t:"La bufanda és ro_a.",a:"j",e:"Roja porta J, davant de a."},
+  // ---- 6è ----
+  {m:6,t:"L'ob_ecte era sobre la taula.",a:"j",e:"Objecte porta J (ob- + -jecte)."},
+  {m:6,t:"Estem fent un pro_ecte de ciències.",a:"j",e:"Projecte porta J, com objecte i trajecte."},
+  {m:6,t:"El tra_ecte fins a l'escola és curt.",a:"j",e:"Trajecte porta J."},
+  {m:6,t:"Un ad_ectiu acompanya el nom.",a:"j",e:"Adjectiu porta J."},
+  {m:6,t:"Nosaltres men_em a les dues.",a:"g",e:"Menjar fa «mengem»: davant de e es fa servir G. Però «menjo» i «menja» porten J."},
+  {m:6,t:"Jo men_o molta fruita.",a:"j",e:"Menjo porta J: davant de o, J."},
+  {m:6,t:"Tu men_es sempre molt de pressa.",a:"g",e:"Menges porta G, davant de e."},
+  {m:6,t:"El mestre diri_eix la classe.",a:"g",e:"Dirigeix, del verb dirigir, s'escriu amb G."},
+  {m:6,t:"No cal ex_agerar tant!",a:"g",e:"Exagerar s'escriu amb G."},
+  {m:6,t:"Hem de su_erir una idea nova.",a:"g",e:"Suggerir s'escriu amb G."},
+  {m:6,t:"Cal omplir el re_istre de l'escola.",a:"g",e:"Registre porta G."},
+  {m:6,t:"Aquest _ove és molt simpàtic.",a:"j",e:"Jove porta J."},
+  {m:6,t:"Va ser una _usta recompensa.",a:"j",e:"Justa porta J, com just."},
+  {m:6,t:"La _ent de tot el poble va venir a la festa.",a:"g",e:"Gent s'escriu amb G, davant de e."},
+  {m:6,t:"M'agrada la ima_e d'aquest quadre.",a:"g",e:"Imatge porta G, com els acabats en -atge i -tge."}
+];
+GJ.forEach((q, i) => q.id = 'gj' + i);
+/* --- 10.2 Classes de paraules: la paraula a endevinar va entre *asteriscs* --- */
+const CLSN = { nom: 'Nom', verb: 'Verb', adjectiu: 'Adjectiu', article: 'Article', adverbi: 'Adverbi', 'preposició': 'Preposició', pronom: 'Pronom' };
+const CLSA = { nom: 'un nom', verb: 'un verb', adjectiu: 'un adjectiu', article: 'un article', adverbi: 'un adverbi', 'preposició': 'una preposició', pronom: 'un pronom' };
+const CLSD = {
+  nom: "Un nom serveix per anomenar persones, animals, coses o llocs.",
+  verb: "El verb expressa una acció o un estat: què fa o què passa.",
+  adjectiu: "L'adjectiu acompanya un nom i diu com és.",
+  article: "L'article va davant del nom i indica el gènere i el nombre (el, la, els, les, un, una…).",
+  adverbi: "L'adverbi diu com, quan o on passa l'acció. No canvia mai de forma.",
+  'preposició': "La preposició (a, de, amb, per, sobre, sense…) uneix paraules dins la frase.",
+  pronom: "El pronom substitueix un nom (jo, tu, ell, ella, nosaltres, vosaltres, ells…)."
+};
+const CL = [
+  // ---- 4t ----
+  {m:4,s:"El *gat* menja peix.",c:'nom'},
+  {m:4,s:"La mare *cuina* una sopa.",c:'verb'},
+  {m:4,s:"Tinc un gos *simpàtic*.",c:'adjectiu'},
+  {m:4,s:"*La* nena riu.",c:'article'},
+  {m:4,s:"Els ocells *canten* a l'arbre.",c:'verb'},
+  {m:4,s:"El *cotxe* és vermell.",c:'nom'},
+  {m:4,s:"El cotxe és *vermell*.",c:'adjectiu'},
+  {m:4,s:"*Els* nens juguen al pati.",c:'article'},
+  {m:4,s:"Els nens *juguen* al pati.",c:'verb'},
+  {m:4,s:"El pati de l'escola és *gran*.",c:'adjectiu'},
+  {m:4,s:"La poma és *dolça*.",c:'adjectiu'},
+  {m:4,s:"*Un* ocell vola pel cel.",c:'article'},
+  {m:4,s:"El professor *llegeix* un conte.",c:'verb'},
+  {m:4,s:"El professor llegeix un *conte*.",c:'nom'},
+  {m:4,s:"La *flor* és groga.",c:'nom'},
+  {m:4,s:"Les *taules* són llargues.",c:'nom'},
+  {m:4,s:"Les taules són *llargues*.",c:'adjectiu'},
+  {m:4,s:"El *nen* corre molt de pressa.",c:'nom'},
+  {m:4,s:"La mestra *explica* la lliçó.",c:'verb'},
+  // ---- 5è ----
+  {m:5,s:"El gat dorm *tranquil·lament*.",c:'adverbi'},
+  {m:5,s:"Vaig a l'escola *amb* la Laia.",c:'preposició'},
+  {m:5,s:"Ella canta *molt* bé.",c:'adverbi'},
+  {m:5,s:"*Ella* canta molt bé.",c:'pronom'},
+  {m:5,s:"El llibre és *sobre* la taula.",c:'preposició'},
+  {m:5,s:"*Nosaltres* anem al cinema.",c:'pronom'},
+  {m:5,s:"Corre *ràpidament* cap a casa.",c:'adverbi'},
+  {m:5,s:"El regal és *per* a tu.",c:'preposició'},
+  {m:5,s:"Ho farem *demà*.",c:'adverbi'},
+  {m:5,s:"*Ells* juguen a futbol.",c:'pronom'},
+  {m:5,s:"Els nens *petits* dormen.",c:'adjectiu'},
+  {m:5,s:"Visc *a* Girona.",c:'preposició'},
+  {m:5,s:"Els *dies* són llargs a l'estiu.",c:'nom'},
+  // ---- 6è ----
+  {m:6,s:"Els alumnes *estudien* amb atenció.",c:'verb'},
+  {m:6,s:"Va arribar *tard* a la classe.",c:'adverbi'},
+  {m:6,s:"*Jo* he vist la pel·lícula.",c:'pronom'},
+  {m:6,s:"Parlaven *sobre* el viatge.",c:'preposició'},
+  {m:6,s:"L'escola *nova* és molt bonica.",c:'adjectiu'},
+  {m:6,s:"L'escola nova és *molt* bonica.",c:'adverbi'},
+  {m:6,s:"Va caminar *lentament* pel bosc.",c:'adverbi'},
+  {m:6,s:"El *bosc* estava ple de fades.",c:'nom'},
+  {m:6,s:"Treballem *sense* parar.",c:'preposició'}
+];
+CL.forEach((q, i) => q.id = 'cl' + i);
+
+/* --- 10.3 Utilitats de text d'hora (català) --- */
+const NUMF = ['', 'una', 'dues', 'tres', 'quatre', 'cinc', 'sis', 'set', 'vuit', 'nou', 'deu', 'onze', 'dotze'];
+const MINN = { 5: 'cinc', 10: 'deu', 20: 'vint', 25: 'vint-i-cinc' };
+const hn = x => ((x - 1) % 12 + 12) % 12 + 1;                 // 13 → 1, 0 → 12
+const hourPhrase = h => h === 1 ? 'la una' : 'les ' + NUMF[h];
+const verbSon = h => h === 1 ? 'És' : 'Són';
+const deHora = h => { h = hn(h); return (h === 1 || h === 11 ? "d'" : 'de ') + NUMF[h]; };
+function horaCat(h, m) {
+  if (m === 0)  return `${verbSon(h)} ${hourPhrase(h)} en punt`;
+  if (m === 15) return `És un quart ${deHora(h + 1)}`;
+  if (m === 30) return `Són dos quarts ${deHora(h + 1)}`;
+  if (m === 45) return `Són tres quarts ${deHora(h + 1)}`;
+  if (m < 30)   return `${verbSon(h)} ${hourPhrase(h)} i ${MINN[m]}`;
+  const n = hn(h + 1);
+  return `${verbSon(n)} ${hourPhrase(n)} menys ${MINN[60 - m]}`;
+}
+const horaDig = (h, m) => h + ':' + String(m).padStart(2, '0');
+
+/* Rellotge analògic en SVG */
+function clockSVG(h, m) {
+  const P = (r, deg) => { const a = deg * Math.PI / 180; return [(100 + r * Math.sin(a)).toFixed(1), (100 - r * Math.cos(a)).toFixed(1)]; };
+  let s = '<svg viewBox="0 0 200 200" class="w-52 h-52 sm:w-64 sm:h-64"><circle cx="100" cy="100" r="94" fill="#fff" stroke="#334155" stroke-width="6"/>';
+  for (let i = 0; i < 60; i++) {
+    const big = i % 5 === 0, a = P(big ? 80 : 86, i * 6), b = P(90, i * 6);
+    s += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#334155" stroke-width="${big ? 3 : 1}"/>`;
+  }
+  for (let n = 1; n <= 12; n++) {
+    const p = P(66, n * 30);
+    s += `<text x="${p[0]}" y="${(+p[1] + 7).toFixed(1)}" text-anchor="middle" font-size="20" font-weight="800" fill="#1e293b" font-family="Baloo 2, sans-serif">${n}</text>`;
+  }
+  const hp = P(46, (h % 12) * 30 + m * .5), mp = P(70, m * 6);
+  s += `<line x1="100" y1="100" x2="${hp[0]}" y2="${hp[1]}" stroke="#0f172a" stroke-width="8" stroke-linecap="round"/>`;
+  s += `<line x1="100" y1="100" x2="${mp[0]}" y2="${mp[1]}" stroke="#ef4444" stroke-width="5" stroke-linecap="round"/>`;
+  return s + '<circle cx="100" cy="100" r="6" fill="#0f172a"/></svg>';
+}
+
+/* ---------- Joc: Taules i càlcul mental ---------- */
+function mulGen(g) {
+  const ty = pick(g === 4 ? ['mul', 'mul', 'miss'] : g === 5 ? ['mul', 'div', 'miss'] : ['mul', 'div', 'miss', 'big', 'big']);
+  let a, b, ans, txt, expl;
+  if (ty === 'mul') {
+    const mx = g === 4 ? 10 : 12; a = rand(2, mx); b = rand(2, mx); ans = a * b; txt = `${a} × ${b} = ?`;
+    expl = `${a} × ${b} = <b>${ans}</b>. Repassa la taula del ${a}. També et serveix pensar ${b} × ${a}: dóna el mateix!`;
+  } else if (ty === 'big') {
+    a = rand(11, 99); b = rand(2, 9); ans = a * b; txt = `${a} × ${b} = ?`;
+    const t = Math.floor(a / 10) * 10, u = a % 10;
+    expl = `Descomposem el número: ${a} × ${b} = (${t} × ${b}) + (${u} × ${b}) = ${t * b} + ${u * b} = <b>${ans}</b>.`;
+  } else if (ty === 'div') {
+    b = rand(2, g === 5 ? 10 : 12); ans = rand(2, g === 5 ? 10 : 15); a = b * ans; txt = `${a} ÷ ${b} = ?`;
+    expl = `${a} ÷ ${b} = <b>${ans}</b>, perquè ${b} × ${ans} = ${a}. La divisió és l'operació inversa de la multiplicació.`;
+  } else {
+    a = rand(2, g === 4 ? 10 : 12); ans = rand(2, g === 4 ? 10 : 12); b = a * ans; txt = `${a} × ? = ${b}`;
+    expl = `${a} × <b>${ans}</b> = ${b}. Per trobar-ho, pensa ${b} ÷ ${a} = ${ans}.`;
+  }
+  const used = new Set([ans]), ds = [];
+  shuffle([ans + 1, ans - 1, ans + 2, ans - 2, ans + 10, ans - 10, ans + b, ans - b, ans + a, ans - a]).forEach(x => {
+    if (x > 0 && !used.has(x) && ds.length < 3) { used.add(x); ds.push(x); }
+  });
+  return { sig: txt, txt, expl, opts: shuffle([{ h: ans, ok: true }, ...ds.map(x => ({ h: x, ok: false }))]) };
+}
+function mulShow() {
+  let q, t = 0;
+  do { q = mulGen(R.grade); t++; } while (R.sigs.has(q.sig) && t < 40);
+  R.sigs.add(q.sig); R.cur = q; R.onEnter = null;
+  stage(`<p class="text-slate-500 font-bold text-center">Calcula mentalment</p>
+    <div class="display text-5xl sm:text-7xl font-extrabold text-center my-8 text-indigo-700">${q.txt}</div>
+    ${optionsHTML(q.opts, 'grid-cols-2', 'display text-4xl')}`);
+  startTimer();
+}
+
+/* ---------- Joc: Classes de paraules ---------- */
+function clsShow() {
+  const it = R.qs[R.i], word = /\*([^*]+)\*/.exec(it.s)[1];
+  const shown = it.s.replace(/\*([^*]+)\*/, '<span class="px-2 rounded-lg bg-yellow-200 text-orange-600 border-b-4 border-orange-400">$1</span>');
+  const pool = R.grade === 4 ? ['nom', 'verb', 'adjectiu', 'article'] : Object.keys(CLSN);
+  const ds = shuffle(pool.filter(c => c !== it.c)).slice(0, 3);
+  R.cur = {
+    opts: shuffle([it.c, ...ds]).map(c => ({ h: CLSN[c], ok: c === it.c })),
+    expl: `«<b>${word}</b>» és ${CLSA[it.c]}. ${CLSD[it.c]}`
+  };
+  R.onEnter = null;
+  stage(`<p class="text-slate-500 font-bold text-center">Quina classe de paraula és la paraula destacada?</p>
+    <div class="display text-2xl sm:text-4xl font-extrabold text-center my-8 leading-snug">${shown}</div>
+    ${optionsHTML(R.cur.opts, 'grid-cols-2')}`);
+}
+
+/* ---------- Joc: El rellotge ---------- */
+function horaShow() {
+  const g = R.grade;
+  const mins = g === 4 ? [0, 15, 30, 45] : g === 5 ? [0, 5, 10, 15, 30, 45, 50, 55] : [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+  let h, m, t = 0;
+  do { h = rand(1, 12); m = pick(mins); t++; } while (R.sigs.has(h + ':' + m) && t < 40);
+  R.sigs.add(h + ':' + m);
+  const fmt = g === 4 ? horaDig : horaCat, right = fmt(h, m);
+  const cands = [[h, pick(mins)], [hn(h + 1), m], [hn(h - 1), m], [hn(m / 5 || 12), (h * 5) % 60]];   // l'últim: busques intercanviades
+  const used = new Set([right]), ds = [];
+  const tryAdd = (hh, mm) => { const s = fmt(hn(hh), mm); if (!used.has(s) && ds.length < 3) { used.add(s); ds.push(s); } };
+  cands.forEach(c => tryAdd(c[0], c[1]));
+  let k = 0; while (ds.length < 3 && k++ < 200) tryAdd(rand(1, 12), pick(mins));
+  R.cur = {
+    opts: shuffle([{ h: right, ok: true }, ...ds.map(x => ({ h: x, ok: false }))]),
+    expl: `La busca <b>curta</b> (negra) marca l'hora i la <b>llarga</b> (vermella) els minuts. Aquí són les <b>${horaDig(h, m)}</b>. En català: «${horaCat(h, m)}».`
+  };
+  R.onEnter = null;
+  stage(`<h3 class="display text-2xl sm:text-3xl font-extrabold text-center">Quina hora marca el rellotge?</h3>
+    <div class="flex justify-center my-4">${clockSVG(h, m)}</div>
+    ${optionsHTML(R.cur.opts, g === 4 ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2', g === 4 ? 'display text-4xl' : '!text-xl')}`);
+}
+
+/* =====================================================================
+   11. PÀGINA D'ENTRADA, MASCOTA I INSÍGNIES
+   ===================================================================== */
+
+/* Mascota original: en Quim, el mussol */
+function owl(cls = 'w-40') {
+  return `<svg viewBox="0 0 200 228" class="${cls}" role="img" aria-label="En Quim, el mussol">
+    <ellipse cx="100" cy="222" rx="52" ry="5" fill="#000" opacity=".12"/>
+    <polygon points="42,70 58,22 88,56" fill="#6d28d9"/><polygon points="158,70 142,22 112,56" fill="#6d28d9"/>
+    <ellipse cx="100" cy="135" rx="72" ry="80" fill="#8b5cf6"/>
+    <ellipse cx="100" cy="158" rx="46" ry="52" fill="#ede9fe"/>
+    <path d="M78 140 q6 8 12 0 M96 150 q6 8 12 0 M114 140 q6 8 12 0 M86 165 q6 8 12 0 M104 165 q6 8 12 0" stroke="#c4b5fd" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="32" cy="148" rx="17" ry="42" fill="#7c3aed" transform="rotate(12 32 148)"/>
+    <ellipse cx="168" cy="148" rx="17" ry="42" fill="#7c3aed" transform="rotate(-12 168 148)"/>
+    <circle cx="70" cy="98" r="28" fill="#fff" stroke="#4c1d95" stroke-width="4"/>
+    <circle cx="130" cy="98" r="28" fill="#fff" stroke="#4c1d95" stroke-width="4"/>
+    <g class="blink"><circle cx="72" cy="100" r="13" fill="#1e1b4b"/><circle cx="128" cy="100" r="13" fill="#1e1b4b"/></g>
+    <circle cx="77" cy="95" r="4.5" fill="#fff"/><circle cx="133" cy="95" r="4.5" fill="#fff"/>
+    <polygon points="100,108 88,128 112,128" fill="#fbbf24" stroke="#d97706" stroke-width="2" stroke-linejoin="round"/>
+    <ellipse cx="78" cy="224" rx="17" ry="6" fill="#fbbf24"/><ellipse cx="122" cy="224" rx="17" ry="6" fill="#fbbf24"/>
+    <rect x="66" y="42" width="68" height="18" rx="5" fill="#334155"/>
+    <polygon points="100,14 30,38 100,62 170,38" fill="#1e293b"/>
+    <line x1="160" y1="40" x2="160" y2="74" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/><circle cx="160" cy="78" r="6" fill="#fbbf24"/>
+  </svg>`;
+}
+
+/* Insígnies: es desbloquegen segons l'estat desat (S) */
+const allPlayed = (s, ids) => ids.every(id => s.played && s.played[id]);
+const BADGES = [
+  { id: 'primer',   e: '🎈', n: 'Primera ronda',        d: 'Acaba una ronda',               t: s => s.rounds >= 1 },
+  { id: 'cent',     e: '💯', n: '100 punts',            d: 'Arriba a 100 punts',            t: s => s.total >= 100 },
+  { id: 'cinc',     e: '🏅', n: '500 punts',            d: 'Arriba a 500 punts',            t: s => s.total >= 500 },
+  { id: 'perfecte', e: '🌟', n: 'Ronda perfecta',       d: 'Aconsegueix 3 estrelles',       t: s => s.perfect >= 1 },
+  { id: 'constant', e: '🔥', n: 'Constant',             d: 'Acaba 10 rondes',               t: s => s.rounds >= 10 },
+  { id: 'mates',    e: '🧮', n: 'Crac de les mates',    d: 'Juga a tots els jocs de mates', t: s => allPlayed(s, ['resta', 'frac', 'mul', 'hora']) },
+  { id: 'lletres',  e: '📖', n: 'Amic de les lletres',  d: 'Juga a tots els jocs de llengua', t: s => allPlayed(s, ['bv', 'gj', 'gram', 'cls']) },
+  { id: 'explorador', e: '🧭', n: 'Explorador',         d: 'Juga als 8 jocs',               t: s => allPlayed(s, Object.keys(GAMES)) }
+];
+function badgesHTML() {
+  const got = S.badges || [];
+  return `<section class="mt-8 bg-white/95 rounded-3xl p-5 shadow-xl">
+    <div class="display text-2xl font-extrabold text-slate-700 mb-3">🎖️ Les teves insígnies <span class="text-base text-slate-400">${got.length}/${BADGES.length}</span></div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${BADGES.map(b => {
+      const on = got.includes(b.id);
+      return `<div class="rounded-2xl p-3 text-center border-4 ${on ? 'bg-yellow-50 border-yellow-300' : 'bg-slate-100 border-slate-200 opacity-60'}">
+        <div class="text-4xl ${on ? '' : 'grayscale'}">${b.e}</div>
+        <div class="font-extrabold text-sm text-slate-700 mt-1">${b.n}</div>
+        <div class="text-xs font-bold text-slate-500">${on ? 'Aconseguida!' : b.d}</div></div>`;
+    }).join('')}</div></section>`;
+}
+/* Mira quines insígnies s'acaben de guanyar, les desa i les retorna */
+function checkBadges() {
+  S.badges = S.badges || [];
+  const nou = BADGES.filter(b => b.t(S) && !S.badges.includes(b.id));
+  nou.forEach(b => S.badges.push(b.id));
+  return nou;
+}
+
+/* ---------- Pàgina d'entrada ---------- */
+function enterApp() { S.seenIntro = true; save(); home(); window.scrollTo(0, 0); }
+function startFromLanding(id) { S.seenIntro = true; save(); openGame(id); window.scrollTo(0, 0); }
+
+function landing() {
+  stopTimer(); R = null;
+  const nFrases = Math.floor((BV.length + GJ.length + GR.length + CL.length) / 10) * 10;
+  const cards = Object.entries(GAMES).map(([id, g]) => `
+    <button onclick="startFromLanding('${id}')" class="card-game text-left rounded-3xl p-5 shadow-xl text-white bg-gradient-to-br ${g.color}">
+      <div class="text-5xl">${g.emoji}</div>
+      <div class="display text-2xl font-extrabold leading-tight mt-1">${g.nom}</div>
+      <p class="font-bold opacity-95 text-sm mt-1">${g.desc}</p>
+    </button>`).join('');
+  const chip = t => `<span class="bg-white/20 backdrop-blur rounded-full px-3 py-1">${t}</span>`;
+  const step = (n, e, t, d) => `<div class="text-center p-4"><div class="mx-auto w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-3xl">${e}</div>
+      <div class="display text-xl font-extrabold text-indigo-600 mt-2">${n}. ${t}</div><p class="font-bold text-slate-600 mt-1">${d}</p></div>`;
+  const perk = (e, t, d) => `<div class="flex gap-3"><div class="text-3xl">${e}</div><div><div class="font-extrabold text-slate-800">${t}</div><p class="text-slate-600 font-semibold text-sm">${d}</p></div></div>`;
+  const faq = (q, a) => `<details class="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200"><summary class="font-extrabold text-slate-800 cursor-pointer">${q}</summary><p class="mt-2 text-slate-600 font-semibold">${a}</p></details>`;
+  const flo = (e, pos, d) => `<div class="float absolute text-4xl sm:text-5xl select-none pointer-events-none ${pos}" style="animation-delay:${d}s">${e}</div>`;
+  $('#app').innerHTML = `
+  <div class="relative overflow-hidden">
+    <nav class="max-w-6xl mx-auto flex items-center justify-between p-4 sm:p-6 text-white">
+      <div class="display text-2xl sm:text-3xl font-extrabold">🎓 Aprèn Jugant!</div>
+      <div class="flex items-center gap-3 sm:gap-5 font-extrabold">
+        <a href="#jocs" class="hidden sm:inline hover:underline">Els jocs</a>
+        <a href="#docents" class="hidden sm:inline hover:underline">Docents i famílies</a>
+        <button onclick="enterApp()" class="bg-yellow-300 text-yellow-900 rounded-2xl px-4 py-2 shadow hover:scale-105 transition">${S.seenIntro ? 'Anar als jocs' : 'Juga ara'} ▶</button>
+      </div>
+    </nav>
+
+    <header class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-14 grid md:grid-cols-2 gap-8 items-center text-white">
+      <div class="pop">
+        <span class="inline-block bg-white/20 rounded-full px-4 py-1 font-extrabold text-sm">Per a 4t, 5è i 6è de Primària · 9-12 anys</span>
+        <h1 class="display text-5xl sm:text-7xl font-extrabold leading-tight mt-4 drop-shadow-lg">Aprendre és el millor <span class="text-yellow-300">joc</span>!</h1>
+        <p class="mt-4 text-xl font-bold opacity-95">Ortografia, mates i gramàtica en català amb minijocs que donen estrelles, insígnies i molt de confeti 🎉</p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button onclick="enterApp()" class="display text-2xl font-extrabold bg-yellow-300 hover:bg-yellow-200 text-yellow-900 rounded-3xl px-8 py-4 shadow-2xl hover:scale-105 transition">▶ Comença a jugar</button>
+          <a href="#docents" class="display text-xl font-extrabold border-4 border-white/70 hover:bg-white/20 rounded-3xl px-6 py-4 transition">Soc docent o família</a>
+        </div>
+        <div class="mt-6 flex flex-wrap gap-2 text-sm font-extrabold">
+          ${chip('🎮 ' + Object.keys(GAMES).length + ' minijocs')}${chip('🗣️ 100% en català')}${chip('🔒 Sense registre')}${chip('📱 Tauleta, ordinador i pissarra')}
+        </div>
+      </div>
+      <div class="relative h-80 sm:h-96 flex items-end justify-center">
+        <div class="absolute inset-x-6 bottom-4 top-6 rounded-[3rem] bg-white/15"></div>
+        ${flo('✏️', 'left-2 top-4', 0)}${flo('➕', 'right-2 top-44', .7)}${flo('🍕', 'left-0 bottom-24', 1.4)}
+        ${flo('📚', 'right-0 bottom-28', 2.1)}${flo('🕒', 'left-16 top-1', 2.8)}${flo('⭐', 'right-16 top-16', 3.2)}
+        <div class="relative float" style="animation-duration:5s">${owl('w-48 sm:w-60')}</div>
+        <div class="absolute left-1/2 sm:left-[58%] top-2 sm:top-6 bg-white text-slate-700 font-extrabold rounded-3xl rounded-bl-none px-4 py-3 shadow-xl max-w-[12rem] text-sm sm:text-base pop">Hola! Soc en Quim. T'ajudo a aprendre jugant? 🦉</div>
+      </div>
+    </header>
+
+    <section id="jocs" class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+      <h2 class="display text-4xl sm:text-5xl font-extrabold text-white text-center drop-shadow">Tria el teu joc</h2>
+      <p class="text-white/90 font-bold text-center mt-2 text-lg">Toca'n un i comença a jugar ara mateix</p>
+      <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">${cards}</div>
+    </section>
+
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      <div class="bg-white rounded-[2rem] shadow-2xl p-6 sm:p-10">
+        <h2 class="display text-3xl sm:text-4xl font-extrabold text-slate-800 text-center">Com funciona?</h2>
+        <div class="grid sm:grid-cols-3 gap-4 mt-4">
+          ${step(1, '🎒', 'Tria el curs', 'Les preguntes s\'adapten a 4t, 5è o 6è.')}
+          ${step(2, '⭐', 'Juga i guanya', 'Cada encert dona punts, ratxes i confeti. Pots aconseguir insígnies!')}
+          ${step(3, '💡', 'Aprèn dels errors', 'Si falles, una explicació breu t\'ajuda a entendre-ho.')}
+        </div>
+      </div>
+    </section>
+
+    <section id="docents" class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      <div class="bg-white rounded-[2rem] shadow-2xl p-6 sm:p-10">
+        <h2 class="display text-3xl sm:text-4xl font-extrabold text-slate-800 text-center">Per a docents i famílies 👩‍🏫</h2>
+        <div class="grid sm:grid-cols-2 gap-5 mt-6">
+          ${perk('🔒', 'Sense registre ni dades personals', 'No hi ha comptes d\'alumne. Els punts es desen només al navegador del dispositiu.')}
+          ${perk('🖥️', 'Per a l\'aula', 'Botons grans i lletra clara: funciona a la pissarra digital, a les tauletes i als ordinadors.')}
+          ${perk('🗣️', 'Tot en català', 'Interfície, instruccions i explicacions dels errors, escrites per a nens de 9 a 12 anys.')}
+          ${perk('🎯', 'Tres nivells', 'El mateix joc adapta la dificultat a 4t, 5è i 6è de Primària.')}
+          ${perk('🔁', 'Sempre hi ha coses noves', `Més de ${nFrases} frases i paraules, i exercicis de mates que es generen sense parar.`)}
+          ${perk('⏱️', 'Rondes curtes', 'Cada ronda té entre 8 i 10 preguntes: ideal per a activitats breus a classe.')}
+        </div>
+        <h3 class="display text-2xl font-extrabold text-slate-800 mt-8 mb-3">Preguntes freqüents</h3>
+        <div class="grid gap-3">
+          ${faq('Cal instal·lar alguna cosa?', 'No. S\'obre al navegador de qualsevol tauleta o ordinador. Només cal connexió a internet.')}
+          ${faq('Es guarden dades dels alumnes?', 'No es demana cap nom, correu ni registre. Les puntuacions queden desades només al navegador del dispositiu on es juga.')}
+          ${faq('Quins continguts treballa?', 'Ortografia (B/V i G/J), restes portant-ne, taules de multiplicar i càlcul mental, fraccions, subjecte i predicat, classes de paraules i lectura del rellotge.')}
+          ${faq('Com puc fer-lo servir a classe?', 'A la pissarra digital en gran grup, o a les tauletes de manera individual. Cada alumne tria el seu curs al menú.')}
+        </div>
+      </div>
+    </section>
+
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-center text-white">
+      <div class="flex justify-center">${owl('w-28')}</div>
+      <h2 class="display text-4xl sm:text-5xl font-extrabold mt-2 drop-shadow">Preparat per jugar?</h2>
+      <button onclick="enterApp()" class="mt-5 display text-3xl font-extrabold bg-yellow-300 hover:bg-yellow-200 text-yellow-900 rounded-3xl px-10 py-5 shadow-2xl hover:scale-105 transition">▶ Comença a jugar</button>
+    </section>
+
+    <footer class="text-center text-white/80 font-bold pb-8 px-4">
+      <!-- CONTACTE: afegeix aquí el teu correu o enllaç perquè els centres et puguin escriure -->
+      Fet amb ❤️ per a l'aula · Aprèn Jugant!
+    </footer>
+  </div>`;
+  window.scrollTo(0, 0);
+}
+
+/* ---------- Arrencada ---------- */
+if (S.seenIntro) home(); else landing();
+</script>
+</body>
+</html>
