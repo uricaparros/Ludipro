@@ -96,19 +96,35 @@
 <main id="app">
   <!-- Contingut inicial per a cercadors; el JavaScript el substitueix en carregar -->
   <div class="max-w-3xl mx-auto p-6 text-white">
-    <h1 class="display text-4xl font-extrabold">Aprèn jugant amb minijocs educatius en català</h1>
-    <p class="mt-3 text-lg font-bold">Aprèn Jugant! és una plataforma de minijocs per a l'alumnat de 4t, 5è i 6è de Primària (9-12 anys). Treballa ortografia, matemàtiques i gramàtica en català, sense registre.</p>
-    <h2 class="display text-2xl font-extrabold mt-5">Minijocs inclosos</h2>
+    <h1 class="display text-4xl sm:text-5xl font-extrabold">Aprèn jugant amb minijocs en català!</h1>
+    <p class="mt-4 text-lg font-bold leading-relaxed">Aprèn Jugant! és una plataforma de minijocs educatius en català pensada per a l'alumnat de 4t, 5è i 6è de Primària, d'entre 9 i 12 anys. Aquí els nens i les nenes aprenen jugant: practiquen ortografia, matemàtiques i gramàtica mentre guanyen punts, estrelles i insígnies, i veuen caure confeti cada vegada que encerten.</p>
+    <h2 class="display text-2xl font-extrabold mt-6">Minijocs de llengua catalana</h2>
+    <p class="mt-2 text-lg font-bold leading-relaxed">A Ortografia: B o V i a Ortografia: G o J, l'alumne completa paraules i frases triant la lletra correcta, amb tres vides i un cronòmetre opcional per fer-ho més dinàmic. A Subjecte i predicat identifica les dues parts de la frase, tant tocant les paraules com triant entre diverses opcions. I a Classes de paraules aprèn a distingir els noms, els verbs, els adjectius, els articles, els adverbis, les preposicions i els pronoms.</p>
+    <h2 class="display text-2xl font-extrabold mt-6">Minijocs de matemàtiques</h2>
+    <p class="mt-2 text-lg font-bold leading-relaxed">Les restes portant-ne es resolen columna a columna, amb caselles per anotar les portades, i si l'alumne falla el joc li mostra el pas a pas. A Fraccions s'interpreten dibuixos de cercles i rectangles, se sumen fraccions amb el mateix denominador i se'n comparen de diferents. A Taules i càlcul mental es practiquen multiplicacions, divisions i el número que falta, i a El rellotge es llegeix l'hora en un rellotge de busques, també en català: un quart de cinc, dos quarts de sis o tres quarts de set.</p>
+    <h2 class="display text-2xl font-extrabold mt-6">Aprendre dels errors</h2>
+    <p class="mt-2 text-lg font-bold leading-relaxed">Cada vegada que l'alumne s'equivoca, el joc li ofereix una explicació breu i amable que li fa entendre per què la resposta correcta és aquella. Així, l'error deixa de ser un problema i passa a formar part de l'aprenentatge. Les preguntes s'adapten al curs que tria l'alumne al menú i no es repeteixen fins que s'han fet servir totes les d'un joc.</p>
+    <h2 class="display text-2xl font-extrabold mt-6">Per a docents i famílies</h2>
+    <p class="mt-2 text-lg font-bold leading-relaxed">Aprèn Jugant! funciona al navegador de qualsevol tauleta, ordinador o pissarra digital, sense instal·lar res. No cal registrar-se i no es demanen dades personals: les puntuacions es desen només al dispositiu on es juga. Les rondes són curtes, de vuit a deu preguntes, i es poden fer servir com a activitat de reforç, de repàs o de joc a l'aula i a casa.</p>
+    <h2 class="display text-2xl font-extrabold mt-6">Els 8 minijocs</h2>
     <ul class="mt-2 list-disc ml-6 font-bold">
-      <li>Ortografia: B o V</li>
-      <li>Ortografia: G o J</li>
-      <li>Restes portant-ne</li>
-      <li>Taules i càlcul mental</li>
-      <li>Fraccions</li>
-      <li>Subjecte i predicat</li>
-      <li>Classes de paraules</li>
-      <li>El rellotge</li>
+      <li><a class="underline" href="#/joc/bv">Ortografia: B o V</a></li>
+      <li><a class="underline" href="#/joc/gj">Ortografia: G o J</a></li>
+      <li><a class="underline" href="#/joc/resta">Restes portant-ne</a></li>
+      <li><a class="underline" href="#/joc/mul">Taules i càlcul mental</a></li>
+      <li><a class="underline" href="#/joc/frac">Fraccions</a></li>
+      <li><a class="underline" href="#/joc/gram">Subjecte i predicat</a></li>
+      <li><a class="underline" href="#/joc/cls">Classes de paraules</a></li>
+      <li><a class="underline" href="#/joc/hora">El rellotge</a></li>
     </ul>
+    <h2 class="display text-2xl font-extrabold mt-6">Recursos oficials útils</h2>
+    <ul class="mt-2 list-disc ml-6 font-bold">
+      <li><a class="underline" href="https://dlc.iec.cat/" target="_blank" rel="noopener">Diccionari de la llengua catalana (IEC)</a></li>
+      <li><a class="underline" href="https://llengua.gencat.cat/" target="_blank" rel="noopener">Llengua catalana: Política Lingüística i Optimot (Generalitat)</a></li>
+      <li><a class="underline" href="https://educacio.gencat.cat/" target="_blank" rel="noopener">Departament d'Educació de la Generalitat</a></li>
+      <li><a class="underline" href="https://xtec.gencat.cat/" target="_blank" rel="noopener">XTEC: Xarxa Telemàtica Educativa de Catalunya</a></li>
+    </ul>
+    <p class="mt-6 font-extrabold"><a class="underline" href="#/jocs">Anar al menú de jocs</a></p>
   </div>
 </main>
 <noscript><p class="p-8 text-white font-bold">Cal activar JavaScript per jugar.</p></noscript>
@@ -322,7 +338,7 @@ const GAMES = {
 
 /* ---------- Pantalla d'inici ---------- */
 function home() {
-  stopTimer(); R = null;
+  stopTimer(); R = null; clearHash();
   const lvl = Math.floor(S.total / 100) + 1, pr = S.total % 100;
   const gradeBtn = g => `<button onclick="setGrade(${g})" class="flex-1 display text-2xl sm:text-3xl font-extrabold rounded-2xl py-3 shadow transition ${S.grade === g ? 'bg-yellow-300 text-yellow-900 scale-105 ring-4 ring-yellow-500' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${g === 4 ? '4t' : g + 'è'}</button>`;
   const cards = Object.entries(GAMES).map(([id, g]) => {
@@ -1114,14 +1130,14 @@ function enterApp() { S.seenIntro = true; save(); home(); window.scrollTo(0, 0);
 function startFromLanding(id) { S.seenIntro = true; save(); openGame(id); window.scrollTo(0, 0); }
 
 function landing() {
-  stopTimer(); R = null;
+  stopTimer(); R = null; clearHash();
   const nFrases = Math.floor((BV.length + GJ.length + GR.length + CL.length) / 10) * 10;
   const cards = Object.entries(GAMES).map(([id, g]) => `
-    <button onclick="startFromLanding('${id}')" class="card-game text-left rounded-3xl p-5 shadow-xl text-white bg-gradient-to-br ${g.color}">
+    <a href="#/joc/${id}" class="card-game block text-left rounded-3xl p-5 shadow-xl text-white bg-gradient-to-br ${g.color}">
       <div class="text-5xl">${g.emoji}</div>
       <div class="display text-2xl font-extrabold leading-tight mt-1">${g.nom}</div>
       <p class="font-bold opacity-95 text-sm mt-1">${g.desc}</p>
-    </button>`).join('');
+    </a>`).join('');
   const chip = t => `<span class="bg-white/20 backdrop-blur rounded-full px-3 py-1">${t}</span>`;
   const step = (n, e, t, d) => `<div class="text-center p-4"><div class="mx-auto w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-3xl">${e}</div>
       <h3 class="display text-xl font-extrabold text-indigo-600 mt-2">${n}. ${t}</h3><p class="font-bold text-slate-600 mt-1">${d}</p></div>`;
@@ -1135,6 +1151,7 @@ function landing() {
       <div class="flex items-center gap-3 sm:gap-5 font-extrabold">
         <a href="#jocs" class="hidden sm:inline hover:underline">Els jocs</a>
         <a href="#docents" class="hidden sm:inline hover:underline">Docents i famílies</a>
+        <a href="#faq" class="hidden md:inline hover:underline">Preguntes</a>
         <button onclick="enterApp()" class="bg-yellow-300 text-yellow-900 rounded-2xl px-4 py-2 shadow hover:scale-105 transition">${S.seenIntro ? 'Anar als jocs' : 'Juga ara'} ▶</button>
       </div>
     </nav>
@@ -1178,6 +1195,19 @@ function landing() {
       </div>
     </section>
 
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      <div class="bg-white rounded-[2rem] shadow-2xl p-6 sm:p-10 text-slate-700 font-semibold leading-relaxed">
+        <h2 class="display text-3xl sm:text-4xl font-extrabold text-slate-800 text-center">Què trobaràs a Aprèn Jugant?</h2>
+        <p class="mt-4 text-lg">Aprèn Jugant! és una plataforma de minijocs educatius en català pensada per a l'alumnat de 4t, 5è i 6è de Primària, d'entre 9 i 12 anys. Aquí els nens i les nenes aprenen jugant: practiquen ortografia, matemàtiques i gramàtica mentre guanyen punts, estrelles i insígnies, i veuen caure confeti cada vegada que encerten.</p>
+        <h3 class="display text-2xl font-extrabold text-indigo-600 mt-6">Minijocs de llengua catalana</h3>
+        <p class="mt-2 text-lg">A Ortografia: B o V i a Ortografia: G o J, l'alumne completa paraules i frases triant la lletra correcta, amb tres vides i un cronòmetre opcional per fer-ho més dinàmic. A Subjecte i predicat identifica les dues parts de la frase, tant tocant les paraules com triant entre diverses opcions. I a Classes de paraules aprèn a distingir els noms, els verbs, els adjectius, els articles, els adverbis, les preposicions i els pronoms.</p>
+        <h3 class="display text-2xl font-extrabold text-indigo-600 mt-6">Minijocs de matemàtiques</h3>
+        <p class="mt-2 text-lg">Les restes portant-ne es resolen columna a columna, amb caselles per anotar les portades, i si l'alumne falla el joc li mostra el pas a pas. A Fraccions s'interpreten dibuixos de cercles i rectangles, se sumen fraccions amb el mateix denominador i se'n comparen de diferents. A Taules i càlcul mental es practiquen multiplicacions, divisions i el número que falta, i a El rellotge es llegeix l'hora en un rellotge de busques, també en català: un quart de cinc, dos quarts de sis o tres quarts de set.</p>
+        <h3 class="display text-2xl font-extrabold text-indigo-600 mt-6">Aprendre dels errors</h3>
+        <p class="mt-2 text-lg">Cada vegada que l'alumne s'equivoca, el joc li ofereix una explicació breu i amable que li fa entendre per què la resposta correcta és aquella. Així, l'error deixa de ser un problema i passa a formar part de l'aprenentatge. Les preguntes s'adapten al curs que tria l'alumne al menú i no es repeteixen fins que s'han fet servir totes les d'un joc.</p>
+      </div>
+    </section>
+
     <section id="docents" class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
       <div class="bg-white rounded-[2rem] shadow-2xl p-6 sm:p-10">
         <h2 class="display text-3xl sm:text-4xl font-extrabold text-slate-800 text-center">Per a docents i famílies 👩‍🏫</h2>
@@ -1189,13 +1219,20 @@ function landing() {
           ${perk('🔁', 'Sempre hi ha coses noves', `Més de ${nFrases} frases i paraules, i exercicis de mates que es generen sense parar.`)}
           ${perk('⏱️', 'Rondes curtes', 'Cada ronda té entre 8 i 10 preguntes: ideal per a activitats breus a classe.')}
         </div>
-        <h3 class="display text-2xl font-extrabold text-slate-800 mt-8 mb-3">Preguntes freqüents</h3>
+        <h3 id="faq" class="display text-2xl font-extrabold text-slate-800 mt-8 mb-3">Preguntes freqüents</h3>
         <div class="grid gap-3">
           ${faq('Cal instal·lar alguna cosa?', 'No. S\'obre al navegador de qualsevol tauleta o ordinador. Només cal connexió a internet.')}
           ${faq('Es guarden dades dels alumnes?', 'No es demana cap nom, correu ni registre. Les puntuacions queden desades només al navegador del dispositiu on es juga.')}
           ${faq('Quins continguts treballa?', 'Ortografia (B/V i G/J), restes portant-ne, taules de multiplicar i càlcul mental, fraccions, subjecte i predicat, classes de paraules i lectura del rellotge.')}
           ${faq('Com puc fer-lo servir a classe?', 'A la pissarra digital en gran grup, o a les tauletes de manera individual. Cada alumne tria el seu curs al menú.')}
         </div>
+        <h3 class="display text-2xl font-extrabold text-slate-800 mt-8 mb-3">Recursos oficials útils</h3>
+        <ul class="grid sm:grid-cols-2 gap-3 font-bold text-indigo-700 underline underline-offset-4">
+          <li><a href="https://dlc.iec.cat/" target="_blank" rel="noopener">Diccionari de la llengua catalana (IEC)</a></li>
+          <li><a href="https://llengua.gencat.cat/" target="_blank" rel="noopener">Llengua catalana: Política Lingüística i Optimot (Generalitat)</a></li>
+          <li><a href="https://educacio.gencat.cat/" target="_blank" rel="noopener">Departament d'Educació de la Generalitat</a></li>
+          <li><a href="https://xtec.gencat.cat/" target="_blank" rel="noopener">XTEC: Xarxa Telemàtica Educativa de Catalunya</a></li>
+        </ul>
       </div>
     </section>
 
@@ -1205,7 +1242,10 @@ function landing() {
       <button onclick="enterApp()" class="mt-5 display text-3xl font-extrabold bg-yellow-300 hover:bg-yellow-200 text-yellow-900 rounded-3xl px-10 py-5 shadow-2xl hover:scale-105 transition">▶ Comença a jugar</button>
     </section>
 
-    <footer class="text-center text-white/80 font-bold pb-8 px-4">
+    <footer class="text-center text-white/90 font-bold pb-8 px-4">
+      <nav aria-label="Enllaços del peu de pàgina" class="flex flex-wrap justify-center gap-x-5 gap-y-2 mb-3 underline underline-offset-4">
+        <a href="#/inici">Inici</a><a href="#jocs">Els jocs</a><a href="#docents">Docents i famílies</a><a href="#faq">Preguntes freqüents</a><a href="#/jocs">Menú de jocs</a>
+      </nav>
       <!-- CONTACTE: afegeix aquí el teu correu o enllaç perquè els centres et puguin escriure -->
       Fet amb ❤️ per a l'aula · Aprèn Jugant!
     </footer>
@@ -1213,8 +1253,19 @@ function landing() {
   window.scrollTo(0, 0);
 }
 
+/* ---------- Enllaços directes (#/joc/frac, #/jocs, #/inici) ---------- */
+function clearHash() { try { if (location.hash.indexOf('#/') === 0) history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
+function route() {
+  const h = location.hash, m = /^#\/joc\/([a-z]+)$/.exec(h);
+  if (m && GAMES[m[1]]) return startFromLanding(m[1]);
+  if (h === '#/jocs') return enterApp();
+  if (h === '#/inici') return landing();
+  return S.seenIntro ? home() : landing();
+}
+addEventListener('hashchange', () => { if (location.hash.indexOf('#/') === 0) route(); });
+
 /* ---------- Arrencada ---------- */
-if (S.seenIntro) home(); else landing();
+if (location.hash.indexOf('#/') === 0) route(); else if (S.seenIntro) home(); else landing();
 </script>
 </body>
 </html>
